@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     image: ${DOCKER_USERNAME}/guiasai-backend:latest
@@ -13,13 +11,6 @@ services:
       - REDIS_URL=redis://guiasai-redis:6379
     networks:
       - dokploy-network
-    # Dokploy Traefik routing
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.backend-app.rule=Host(`api.tudominio.com`)
-      - traefik.http.routers.backend-app.entrypoints=websecure
-      - traefik.http.routers.backend-app.tls.certresolver=letsencrypt
-      - traefik.http.services.backend-app.loadbalancer.server.port=3001
     depends_on:
       - redis
 
@@ -29,15 +20,9 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://api.tudominio.com
+      - NEXT_PUBLIC_API_URL=https://TU_DOMINIO_DEL_BACKEND.com
     networks:
       - dokploy-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.frontend-app.rule=Host(`www.tudominio.com`)
-      - traefik.http.routers.frontend-app.entrypoints=websecure
-      - traefik.http.routers.frontend-app.tls.certresolver=letsencrypt
-      - traefik.http.services.frontend-app.loadbalancer.server.port=3000
 
   redis:
     image: redis:7-alpine
@@ -50,6 +35,7 @@ services:
 
 volumes:
   redis_data:
+
 
 networks:
   dokploy-network:

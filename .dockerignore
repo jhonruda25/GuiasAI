@@ -1,0 +1,16 @@
+node_modules
+.next
+.turbo
+dist
+.env*
+!.env.example
+coverage
+.git
+.vscode
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+out
+build
+apps/frontend/.next
+apps/backend/dist

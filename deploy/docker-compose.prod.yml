@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/guiasai-backend:latest
+    container_name: guiasai-backend-prod
+    restart: unless-stopped
+    environment:
+      # OWASP: Explicitly enforce production checks
+      - NODE_ENV=production
+      # Injected safely from Dokploy's UI global variables
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://guiasai-redis:6379
+    networks:
+      - dokploy-network
+    # Dokploy Traefik routing
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend-app.rule=Host(`api.tudominio.com`)
+      - traefik.http.routers.backend-app.entrypoints=websecure
+      - traefik.http.routers.backend-app.tls.certresolver=letsencrypt
+      - traefik.http.services.backend-app.loadbalancer.server.port=3001
+    depends_on:
+      - redis
+
+  frontend:
+    image: ${DOCKER_USERNAME}/guiasai-frontend:latest
+    container_name: guiasai-frontend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.tudominio.com
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend-app.rule=Host(`www.tudominio.com`)
+      - traefik.http.routers.frontend-app.entrypoints=websecure
+      - traefik.http.routers.frontend-app.tls.certresolver=letsencrypt
+      - traefik.http.services.frontend-app.loadbalancer.server.port=3000
+
+  redis:
+    image: redis:7-alpine
+    container_name: guiasai-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - dokploy-network
+
+volumes:
+  redis_data:
+
+networks:
+  dokploy-network:
+    external: true

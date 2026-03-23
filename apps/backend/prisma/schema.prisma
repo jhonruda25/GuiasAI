@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WorkGuide {
+  id             String          @id @default(uuid())
+  userId         String          @map("user_id")
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic          String
+  targetAudience String          @map("target_audience")
+  language       String          @default("es")
+  status         WorkGuideStatus @default(PENDING)
+  content        Json?
+  globalScore    Int?            @map("global_score")
+  errorMessage   String?         @map("error_message")
+  reviewed       Boolean         @default(false)
+  reviewedBy     String?         @map("reviewed_by")
+  reviewedAt     DateTime?       @map("reviewed_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@map("work_guides")
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+enum WorkGuideStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  fullName     String      @map("full_name")
+  passwordHash String      @map("password_hash")
+  role         UserRole    @default(TEACHER)
+  sessions     Session[]
+  workGuides   WorkGuide[]
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  tokenHash  String   @unique @map("token_hash")
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  @@map("sessions")
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+enum UserRole {
+  TEACHER
+}

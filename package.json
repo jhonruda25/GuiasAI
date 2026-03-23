@@ -1,0 +1,51 @@
+{
+  "name": "GuiasAI",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "turbo run build",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:api": "pnpm --filter backend start:api:dev",
+    "dev:worker": "pnpm --filter backend start:worker:dev",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter backend exec prisma migrate deploy",
+    "db:generate": "pnpm --filter backend exec prisma generate",
+    "db:generate:safe": "powershell -ExecutionPolicy Bypass -File ./scripts/prisma-generate-safe.ps1",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "prisma:validate": "pnpm --filter backend exec prisma validate",
+    "smoke:test:local": "node ./scripts/smoke-test-local.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.30.3",
+  "devDependencies": {
+    "@types/node": "25.3.3",
+    "eslint": "10.0.2",
+    "prettier": "3.8.1",
+    "ts-node": "10.9.2",
+    "ts-node-dev": "2.0.0",
+    "turbo": "2.8.13",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "prisma": "5.22.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "multer": "2.1.1",
+      "file-type": "21.3.2",
+      "dompurify": "3.3.2",
+      "qs": "6.14.1",
+      "@sentry/node": "10.27.0",
+      "@sentry/nextjs": "10.27.0",
+      "@sentry/node-core": "10.27.0",
+      "brace-expansion": "2.0.2",
+      "diff": "5.2.2"
+    }
+  }
+}

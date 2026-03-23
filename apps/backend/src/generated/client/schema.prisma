@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WorkGuideStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+model WorkGuide {
+  id             String          @id @default(uuid())
+  topic          String
+  targetAudience String          @map("target_audience")
+  status         WorkGuideStatus @default(PENDING)
+  content        Json?
+  globalScore    Int?            @map("global_score")
+  errorMessage   String?         @map("error_message")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@map("work_guides")
+}

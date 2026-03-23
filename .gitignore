@@ -1,0 +1,5 @@
+node_modules/
+.turbo/
+*.log
+out.json
+apps/backend/dist/

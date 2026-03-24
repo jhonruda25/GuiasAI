@@ -25,15 +25,15 @@ RUN pnpm --filter backend exec prisma generate
 ENV NODE_ENV=production
 RUN pnpm turbo run build --filter=backend
 
-# Optimización radical: Eliminamos las devDependencies para la imagen final
-RUN CI=true pnpm prune --prod
+# Extraer solo archivos de entorno de producción aislados sin symlinks (Reemplaza a prune)
+RUN pnpm deploy --filter backend --prod /app/pruned
 
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk update && apk upgrade --no-cache && apk add --no-cache openssl
 
-# OWASP: Reduce attack surface by deleting global node binaries and npm (fixes tar, minimatch, glob CVEs)
+# OWASP: Reduce attack surface by deleting global node binaries and npm
 RUN rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn /usr/local/bin/yarnpkg /usr/local/bin/corepack
 
@@ -41,12 +41,8 @@ RUN rm -rf /usr/local/lib/node_modules/npm \
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy over exact needed files to reduce attack surface and size
-COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/dist ./apps/backend/dist
-COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/package.json ./apps/backend/package.json
-COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/node_modules ./apps/backend/node_modules
-COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/prisma ./apps/backend/prisma
+# Copy the completely isolated and pruned production app
+COPY --from=installer --chown=nestjs:nodejs /app/pruned ./apps/backend
 
 USER nestjs
 

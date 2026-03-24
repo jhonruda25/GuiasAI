@@ -3,6 +3,7 @@ services:
     image: ${DOCKER_USERNAME}/guiasai-backend:latest
     container_name: guiasai-backend-prod
     restart: unless-stopped
+    env_file: [".env"]
     environment:
       # OWASP: Explicitly enforce production checks
       - NODE_ENV=production
@@ -18,9 +19,10 @@ services:
     image: ${DOCKER_USERNAME}/guiasai-frontend:latest
     container_name: guiasai-frontend-prod
     restart: unless-stopped
+    env_file: [".env"]
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://TU_DOMINIO_DEL_BACKEND.com
+      - NEXT_PUBLIC_API_URL=https://apiguiasai.duckdns.org
     networks:
       - dokploy-network
 

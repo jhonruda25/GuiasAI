@@ -26,7 +26,7 @@ ENV NODE_ENV=production
 RUN pnpm turbo run build --filter=backend
 
 # Extraer solo archivos de entorno de producción aislados sin symlinks (Reemplaza a prune)
-RUN pnpm deploy --filter backend --prod /app/pruned
+RUN pnpm deploy --filter backend --prod --legacy /app/pruned
 
 FROM base AS runner
 WORKDIR /app

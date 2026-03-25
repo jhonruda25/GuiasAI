@@ -1,36 +1,49 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: guiasai-postgres
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: guiasai-backend-prod
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB: ${POSTGRES_DB:-guiasai}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-guiasai}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=guiasai-redis
+      - REDIS_PORT=6379
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
+      - AUTH_SESSION_SECRET=${AUTH_SESSION_SECRET}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - GEMINI_ROOT_MODEL=${GEMINI_ROOT_MODEL}
+    networks:
+      - dokploy-network
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: guiasai-frontend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://apiguiasai.duckdns.org
+    networks:
+      - dokploy-network
 
   redis:
     image: redis:7-alpine
-    container_name: guiasai-redis
+    container_name: guiasai-redis-prod
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks:
+      - dokploy-network
 
 volumes:
-  postgres_data:
   redis_data:
+
+networks:
+  dokploy-network:
+    external: true

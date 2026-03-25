@@ -67,7 +67,7 @@ pnpm.cmd db:migrate
 5. Si Prisma queda bloqueado por Windows:
 
 ```powershell
-pnpm.cmd db:generate:safe
+pnpm.cmd db:generate:safe 
 ```
 
 Ese script puede cerrar procesos `node.exe` del workspace para liberar el engine bloqueado de Prisma.

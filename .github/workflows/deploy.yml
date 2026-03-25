@@ -69,38 +69,55 @@ jobs:
           DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
           IMAGE_TAG: ${{ steps.slug.outputs.sha_short }}
         run: |
-          import os, requests
+          import os, requests, json, urllib.parse
           url = os.environ['DOKPLOY_URL']
           token = os.environ['DOKPLOY_API_TOKEN']
           cid = os.environ['DOKPLOY_COMPOSE_ID']
           tag = os.environ['IMAGE_TAG']
-          headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          headers = {"x-api-key": token, "Content-Type": "application/json"}
           
-          # 1. Obtener la configuración actual (para no borrar variables)
+          # 1. Obtener la configuración actual (Query GET tRPC)
+          input_obj = {"0": {"json": {"composeId": cid}}}
+          input_str = urllib.parse.quote(json.dumps(input_obj))
+          get_url = f"{url}/api/trpc/compose.one?batch=1&input={input_str}"
+          
           try:
-              resp = requests.post(f"{url}/api/compose.one", json={"composeId": cid}, headers=headers)
+              resp = requests.get(get_url, headers=headers)
               resp.raise_for_status()
-              data = resp.json()
+              # Extraer los datos del formato batch de tRPC
+              data = resp.json()[0]['result']['data']['json']
           except Exception as e:
               print(f"Error fetching compose config: {e}")
               exit(1)
 
           current_env = data.get('env', '') or ''
           
-          # 2. Mezclar IMAGE_TAG (reemplazar si existe, añadir si no)
+          # 2. Mezclar IMAGE_TAG
           lines = current_env.split('\n')
           new_lines = [l for l in lines if not l.split('=')[0].strip() == 'IMAGE_TAG' and l.strip()]
           new_lines.append(f"IMAGE_TAG={tag}")
           new_env = '\n'.join(new_lines)
           
-          # 3. Actualizar enviando el objeto completo + el nuevo env
-          payload = {**data, "env": new_env}
+          # 3. Actualizar (Mutation POST tRPC)
+          # El body de tRPC Mutation también lleva el formato { "0": { "json": { ... } } }
+          update_url = f"{url}/api/trpc/compose.update?batch=1"
+          payload = {
+              "0": {
+                  "json": {
+                      **data,
+                      "env": new_env
+                  }
+              }
+          }
+          
           try:
-              update_resp = requests.post(f"{url}/api/compose.update", json=payload, headers=headers)
+              update_resp = requests.post(update_url, json=payload, headers=headers)
               update_resp.raise_for_status()
-              print(f"✅ Successfully updated IMAGE_TAG to {tag}")
+              print(f"✅ Successfully updated IMAGE_TAG to {tag} via tRPC")
           except Exception as e:
               print(f"Error updating compose: {e}")
+              if hasattr(e, 'response') and e.response is not None:
+                  print(f"Details: {e.response.text}")
               exit(1)
 
       - name: Trigger Dokploy Deploy

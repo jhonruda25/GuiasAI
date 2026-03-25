@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { AuthField, AuthForm } from "@/components/auth/auth-form";
+import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { loginUser } from "@/services/auth.api";
 import { useSessionStore } from "@/store/session.store";
@@ -54,6 +55,26 @@ export function LoginPageClient() {
       onSubmit={handleSubmit}
       loading={submitting}
       error={error}
+      secondaryAction={
+        <div className="relative mt-2">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border/60" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground font-semibold tracking-wider">
+              O accede rápido
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            className="mt-4 h-12 w-full rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300"
+            onClick={() => router.push("/")}
+            type="button"
+          >
+            Iniciar sesión como profesor
+          </Button>
+        </div>
+      }
     >
       <AuthField
         id="email"

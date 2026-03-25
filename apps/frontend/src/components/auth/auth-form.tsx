@@ -24,6 +24,7 @@ interface AuthFormProps {
   loading: boolean;
   error: string | null;
   children?: ReactNode;
+  secondaryAction?: ReactNode;
 }
 
 export function AuthForm({
@@ -37,6 +38,7 @@ export function AuthForm({
   loading,
   error,
   children,
+  secondaryAction,
 }: AuthFormProps) {
   return (
     <div className="grid min-h-screen place-items-center px-4 py-10">
@@ -63,6 +65,8 @@ export function AuthForm({
             <Button className="h-12 rounded-full" type="submit" disabled={loading}>
               {loading ? "Procesando..." : submitLabel}
             </Button>
+
+            {secondaryAction}
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {footerLabel}{" "}

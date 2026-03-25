@@ -62,14 +62,46 @@ jobs:
         run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
       - name: Update IMAGE_TAG in Dokploy
+        shell: python
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+          IMAGE_TAG: ${{ steps.slug.outputs.sha_short }}
         run: |
-          curl -s -X POST "${{ secrets.DOKPLOY_URL }}/api/compose.update" \
-            -H "Authorization: Bearer ${{ secrets.DOKPLOY_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "composeId": "${{ secrets.DOKPLOY_COMPOSE_ID }}",
-              "env": "IMAGE_TAG=${{ steps.slug.outputs.sha_short }}"
-            }'
+          import os, requests
+          url = os.environ['DOKPLOY_URL']
+          token = os.environ['DOKPLOY_API_TOKEN']
+          cid = os.environ['DOKPLOY_COMPOSE_ID']
+          tag = os.environ['IMAGE_TAG']
+          headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+          
+          # 1. Obtener la configuración actual (para no borrar variables)
+          try:
+              resp = requests.post(f"{url}/api/compose.one", json={"composeId": cid}, headers=headers)
+              resp.raise_for_status()
+              data = resp.json()
+          except Exception as e:
+              print(f"Error fetching compose config: {e}")
+              exit(1)
+
+          current_env = data.get('env', '') or ''
+          
+          # 2. Mezclar IMAGE_TAG (reemplazar si existe, añadir si no)
+          lines = current_env.split('\n')
+          new_lines = [l for l in lines if not l.split('=')[0].strip() == 'IMAGE_TAG' and l.strip()]
+          new_lines.append(f"IMAGE_TAG={tag}")
+          new_env = '\n'.join(new_lines)
+          
+          # 3. Actualizar enviando el objeto completo + el nuevo env
+          payload = {**data, "env": new_env}
+          try:
+              update_resp = requests.post(f"{url}/api/compose.update", json=payload, headers=headers)
+              update_resp.raise_for_status()
+              print(f"✅ Successfully updated IMAGE_TAG to {tag}")
+          except Exception as e:
+              print(f"Error updating compose: {e}")
+              exit(1)
 
       - name: Trigger Dokploy Deploy
         run: |

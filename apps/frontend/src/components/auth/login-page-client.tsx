@@ -57,17 +57,19 @@ export function LoginPageClient() {
       error={error}
       secondaryAction={
         <div className="relative mt-2">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border/60" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground font-semibold tracking-wider">
-              O accede rápido
-            </span>
+          <div className="relative mt-4 mb-0">
+            <div className="absolute inset-0 flex items-center pointer-events-none">
+              <span className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground font-semibold tracking-wider">
+                O accede rápido
+              </span>
+            </div>
           </div>
           <Button
             variant="outline"
-            className="mt-4 h-12 w-full rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300"
+            className="mt-2 h-12 w-full rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300"
             onClick={() => {
               setUser({
                 id: 'mock-user-id',

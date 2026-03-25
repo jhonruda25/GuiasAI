@@ -56,33 +56,31 @@ export function LoginPageClient() {
       loading={submitting}
       error={error}
       secondaryAction={
-        <div className="relative mt-2">
-          <div className="relative mt-4 mb-0">
+        <div className="mt-4">
+          <div className="relative mb-3">
             <div className="absolute inset-0 flex items-center pointer-events-none">
               <span className="w-full border-t border-border/60" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground font-semibold tracking-wider">
-                O accede rápido
+                Cuenta de prueba
               </span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="mt-2 h-12 w-full rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300"
-            onClick={() => {
-              setUser({
-                id: 'mock-user-id',
-                email: 'admin@guiasai.com',
-                fullName: 'Profesor Demo',
-                role: 'TEACHER',
-              });
-              router.push("/");
-            }}
+          <button
             type="button"
+            onClick={() => {
+              setEmail("demo@guiasai.com");
+              setPassword("Demo1234!");
+            }}
+            className="w-full rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-left text-sm transition-all hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
           >
-            Iniciar sesión como profesor
-          </Button>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary/70 mb-1">Clic para autocompletar</p>
+            <div className="flex flex-col gap-0.5 font-mono text-xs text-foreground/80">
+              <span>📧 demo@guiasai.com</span>
+              <span>🔑 Demo1234!</span>
+            </div>
+          </button>
         </div>
       }
     >

@@ -52,4 +52,4 @@ USER nestjs
 
 EXPOSE 3001
 ENV PORT=3001
-CMD ["node", "apps/backend/dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=prisma/schema.prisma && npx prisma db seed --schema=prisma/schema.prisma && node dist/main"]

@@ -57,6 +57,20 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Dokploy Webhook
+      - name: Get short SHA
+        id: slug
+        run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Update IMAGE_TAG in Dokploy
+        run: |
+          curl -s -X POST "${{ secrets.DOKPLOY_URL }}/api/compose.update" \
+            -H "Authorization: Bearer ${{ secrets.DOKPLOY_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "composeId": "${{ secrets.DOKPLOY_COMPOSE_ID }}",
+              "env": "IMAGE_TAG=${{ steps.slug.outputs.sha_short }}"
+            }'
+
+      - name: Trigger Dokploy Deploy
         run: |
           curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_URL }}"

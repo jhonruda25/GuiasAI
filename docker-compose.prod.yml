@@ -1,0 +1,48 @@
+services:
+  backend:
+    image: chipi7u7/guiasai-backend:latest
+    container_name: guiasai-backend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=guiasai-redis
+      - REDIS_PORT=6379
+      - SENTRY_DSN=${SENTRY_DSN}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
+      - AUTH_SESSION_SECRET=${AUTH_SESSION_SECRET}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - GEMINI_FALLBACK_MODEL=${GEMINI_FALLBACK_MODEL}
+      - GEMINI_IMAGE_MODEL=${GEMINI_IMAGE_MODEL}
+      - GEMINI_IMAGE_FALLBACK_MODEL=${GEMINI_IMAGE_FALLBACK_MODEL}
+    networks:
+      - dokploy-network
+    depends_on:
+      - redis
+
+  frontend:
+    image: chipi7u7/guiasai-frontend:latest
+    container_name: guiasai-frontend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://apiguiasai.duckdns.org
+    networks:
+      - dokploy-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: guiasai-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - dokploy-network
+
+volumes:
+  redis_data:
+
+networks:
+  dokploy-network:
+    external: true

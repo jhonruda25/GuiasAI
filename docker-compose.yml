@@ -1,6 +1,7 @@
 services:
   backend:
     image: chipi7u7/guiasai-backend:${IMAGE_TAG:-latest}
+    pull_policy: always
     container_name: guiasai-backend-prod
     restart: unless-stopped
     environment:
@@ -20,6 +21,7 @@ services:
 
   frontend:
     image: chipi7u7/guiasai-frontend:${IMAGE_TAG:-latest}
+    pull_policy: always
     container_name: guiasai-frontend-prod
     restart: unless-stopped
     environment:

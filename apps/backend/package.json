@@ -10,7 +10,7 @@
     "prisma"
   ],
   "prisma": {
-    "seed": "./node_modules/.bin/ts-node -r tsconfig-paths/register prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   },
   "scripts": {
     "build": "nest build",
@@ -54,8 +54,6 @@
     "prisma": "5.22.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1",
-    "ts-node": "10.9.2",
-    "tsconfig-paths": "4.2.0",
     "zod": "^4.1.8"
   },
   "devDependencies": {
@@ -79,6 +77,8 @@
     "supertest": "7.0.0",
     "ts-jest": "29.2.5",
     "ts-loader": "9.5.2",
+    "ts-node": "10.9.2",
+    "tsconfig-paths": "4.2.0",
     "typescript": "5.7.3",
     "typescript-eslint": "8.20.0"
   },

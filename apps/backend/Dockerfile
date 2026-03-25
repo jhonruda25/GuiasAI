@@ -25,6 +25,9 @@ RUN pnpm --filter backend exec prisma generate
 ENV NODE_ENV=production
 RUN pnpm turbo run build --filter=backend
 
+# Compile seed script for production to avoid ts-node at runtime
+RUN npx esbuild prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:bcryptjs --outfile=prisma/seed.js
+
 # Extraer solo archivos de entorno de producción aislados sin symlinks (Reemplaza a prune)
 RUN pnpm deploy --filter backend --prod --legacy /app/pruned
 

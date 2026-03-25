@@ -58,7 +58,7 @@ export function GeneratorForm({
   const isSubmitting = status === "loading";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] fade-in">
       <Card className="overflow-hidden border-border/70 bg-card/92 shadow-[0_24px_80px_rgba(19,36,53,0.12)]">
         <CardHeader className="gap-4 border-b border-border/70">
           <div className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">

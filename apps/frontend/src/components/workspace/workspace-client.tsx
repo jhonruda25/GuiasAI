@@ -65,9 +65,10 @@ export function WorkspaceClient() {
   useWorkGuideSse(guideId);
 
   useEffect(() => {
-    if (hydrated && !loading && !user) {
-      router.replace("/login");
-    }
+    // Auth bypass: Redirection disabled for now
+    // if (hydrated && !loading && !user) {
+    //   router.replace("/login");
+    // }
   }, [hydrated, loading, router, user]);
 
   const updateTab = (nextTab: WorkspaceTab) => {

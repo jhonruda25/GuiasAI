@@ -15,7 +15,10 @@ const envSchema = z.object({
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(168),
   AUTH_BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
-  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_DSN: z
+    .string()
+    .transform((v) => (v === '' ? undefined : v))
+    .pipe(z.string().url().optional()),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

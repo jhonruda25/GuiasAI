@@ -34,77 +34,83 @@
 }
 
 :root {
-  --radius: 1rem;
-  --background: oklch(0.986 0.012 93.2);
-  --foreground: oklch(0.245 0.034 248.3);
-  --card: oklch(0.995 0.008 96.8 / 96%);
-  --card-foreground: oklch(0.245 0.034 248.3);
-  --popover: oklch(0.995 0.008 96.8);
-  --popover-foreground: oklch(0.245 0.034 248.3);
-  --primary: oklch(0.41 0.08 233.8);
-  --primary-foreground: oklch(0.985 0.01 95);
-  --secondary: oklch(0.945 0.03 183.5);
-  --secondary-foreground: oklch(0.26 0.03 233.8);
-  --muted: oklch(0.958 0.01 94);
-  --muted-foreground: oklch(0.47 0.032 236.7);
-  --accent: oklch(0.86 0.07 85.4);
-  --accent-foreground: oklch(0.29 0.04 245.1);
-  --destructive: oklch(0.55 0.18 29.4);
-  --border: oklch(0.88 0.018 84.7);
-  --input: oklch(0.985 0.008 96.8);
-  --ring: oklch(0.61 0.08 230.1);
-  --paper-warm: rgba(255, 250, 241, 0.9);
-  --ink-900: rgb(19 36 53);
-  --ink-700: rgb(55 78 98);
+  --radius: 1.25rem;
+  --background: oklch(0.99 0.005 90);
+  --foreground: oklch(0.2 0.02 240);
+  --card: oklch(1 0 0 / 94%);
+  --card-foreground: oklch(0.2 0.02 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 240);
+  --primary: oklch(0.45 0.08 245);
+  --primary-foreground: oklch(0.98 0.01 245);
+  --secondary: oklch(0.96 0.015 200);
+  --secondary-foreground: oklch(0.3 0.03 240);
+  --muted: oklch(0.97 0.01 240);
+  --muted-foreground: oklch(0.5 0.02 240);
+  --accent: oklch(0.92 0.04 95);
+  --accent-foreground: oklch(0.3 0.05 60);
+  --destructive: oklch(0.6 0.15 30);
+  --border: oklch(0.9 0.01 240);
+  --input: oklch(0.99 0.005 90);
+  --ring: oklch(0.45 0.08 245 / 30%);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/60;
+    @apply border-border/60 outline-ring/40;
   }
 
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at top left, rgba(182, 220, 214, 0.45), transparent 36%),
-      radial-gradient(circle at top right, rgba(220, 202, 150, 0.26), transparent 30%),
-      linear-gradient(180deg, rgba(255, 251, 243, 0.98), rgba(247, 243, 234, 0.94));
+    background: 
+      radial-gradient(at 0% 0%, oklch(0.92 0.05 240 / 15%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, oklch(0.45 0.08 245 / 5%) 0px, transparent 50%),
+      var(--background);
     color: var(--foreground);
-    font-family: var(--font-body), sans-serif;
-    font-size: clamp(1rem, 0.96rem + 0.22vw, 1.08rem);
-    line-height: 1.55;
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  h1, h2, h3, h4 {
     font-family: var(--font-display), serif;
-    letter-spacing: -0.02em;
-  }
-
-  input,
-  button,
-  textarea,
-  select {
-    font: inherit;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: oklch(0.15 0.02 240);
   }
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--font-display), serif;
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.04)];
   }
 
-  .editorial-surface {
-    background: linear-gradient(180deg, rgba(255, 252, 246, 0.92), rgba(244, 249, 248, 0.9));
+  .premium-shadow {
+    box-shadow: 0 20px 50px -12px oklch(0.2 0.02 240 / 8%);
   }
 
-  .editorial-copy {
-    text-wrap: pretty;
+  .editorial-heading {
+    @apply text-balance leading-[1.15] tracking-tight;
   }
+
+  .mesh-gradient {
+    background-image: 
+      radial-gradient(at 12% 16%, oklch(0.94 0.03 220) 0px, transparent 50%),
+      radial-gradient(at 84% 86%, oklch(0.96 0.04 100 / 40%) 0px, transparent 50%);
+  }
+}
+
+/* Custom transitions and animaions */
+.fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

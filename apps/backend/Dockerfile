@@ -28,6 +28,10 @@ RUN pnpm turbo run build --filter=backend
 # Extraer solo archivos de entorno de producción aislados sin symlinks (Reemplaza a prune)
 RUN pnpm deploy --filter backend --prod --legacy /app/pruned
 
+# Generate Prisma client again inside the pruned directory to ensure it is in local node_modules
+WORKDIR /app/pruned
+RUN npx prisma generate --schema=prisma/schema.prisma
+
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production

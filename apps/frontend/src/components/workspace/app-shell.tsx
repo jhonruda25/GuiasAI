@@ -22,9 +22,9 @@ export function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen fade-in">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-        <header className="grid gap-6 rounded-[var(--radius-4xl)] border border-border/80 bg-card/90 p-5 shadow-[0_24px_80px_rgba(19,36,53,0.12)] backdrop-blur md:grid-cols-[1.3fr_0.9fr] md:p-8">
+        <header className="grid gap-6 rounded-[var(--radius-4xl)] border border-border/80 glass p-5 shadow-[0_24px_80px_rgba(19,36,53,0.08)] md:grid-cols-[1.3fr_0.9fr] md:p-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               <BookOpenText className="size-3.5" />

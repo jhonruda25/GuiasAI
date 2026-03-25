@@ -1,8 +1,6 @@
 services:
   backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
+    image: chipi7u7/guiasai-backend:${IMAGE_TAG:-latest}
     container_name: guiasai-backend-prod
     restart: unless-stopped
     environment:
@@ -21,9 +19,7 @@ services:
       - redis
 
   frontend:
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
+    image: chipi7u7/guiasai-frontend:${IMAGE_TAG:-latest}
     container_name: guiasai-frontend-prod
     restart: unless-stopped
     environment:

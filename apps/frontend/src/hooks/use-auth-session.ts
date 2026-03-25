@@ -25,13 +25,8 @@ export function useAuthSession() {
         }
       } catch (error) {
         if (isMounted) {
-          // Bypass: If auth fails, we set a mock user for now
-          setUser({
-            id: 'mock-user-id',
-            email: 'admin@guiasai.com',
-            fullName: 'Usuario Demo',
-            role: 'TEACHER',
-          });
+          // No user found or network error - stay logged out
+          setUser(null);
         }
       } finally {
         if (isMounted) {

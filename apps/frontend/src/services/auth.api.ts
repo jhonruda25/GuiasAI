@@ -25,7 +25,10 @@ export async function loginUser(payload: {
   password: string;
 }): Promise<AuthResponse> {
   // Hardcoded Demo Bypass
-  if (payload.email === 'demo@guiasai.com' && payload.password === 'Demo1234!') {
+  const normalizedEmail = payload.email.trim().toLowerCase();
+  const normalizedPassword = payload.password.trim();
+
+  if (normalizedEmail === 'demo@guiasai.com' && normalizedPassword === 'Demo1234!') {
     return {
       user: {
         id: 'demo-user-id',

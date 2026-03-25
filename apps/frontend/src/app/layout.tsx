@@ -30,6 +30,11 @@ export default function RootLayout({
         className={`${displayFont.variable} ${bodyFont.variable} antialiased`}
         suppressHydrationWarning
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__ENV = { API_BASE_URL: '${process.env.API_BASE_URL || ""}' }`,
+          }}
+        />
         {children}
       </body>
     </html>

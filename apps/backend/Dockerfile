@@ -33,7 +33,7 @@ WORKDIR /app/pruned
 RUN npx prisma generate --schema=prisma/schema.prisma
 
 FROM base AS runner
-WORKDIR /app
+WORKDIR /app/apps/backend
 ENV NODE_ENV=production
 RUN apk update && apk upgrade --no-cache && apk add --no-cache openssl
 
@@ -46,10 +46,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
 # Copy the completely isolated and pruned production app
-COPY --from=installer --chown=nestjs:nodejs /app/pruned ./apps/backend
+COPY --from=installer --chown=nestjs:nodejs /app/pruned ./
 
 USER nestjs
 
 EXPOSE 3001
 ENV PORT=3001
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=prisma/schema.prisma && npx prisma db seed --schema=prisma/schema.prisma && node dist/main"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && ./node_modules/.bin/prisma db seed --schema=prisma/schema.prisma && node dist/main"]

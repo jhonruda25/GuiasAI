@@ -29,8 +29,7 @@ RUN pnpm turbo run build --filter=backend
 RUN npx esbuild apps/backend/prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:bcryptjs --outfile=apps/backend/prisma/seed.js
 
 # Extraer solo archivos de entorno de producción aislados sin symlinks (Reemplaza a prune)
-RUN pnpm deploy --filter backend --prod --legacy /app/pruned \
-    && cp -r apps/backend/dist /app/pruned/dist
+RUN pnpm deploy --filter backend --prod --legacy /app/pruned
 
 # Generate Prisma client again inside the pruned directory to ensure it is in local node_modules
 WORKDIR /app/pruned
@@ -51,6 +50,7 @@ RUN adduser --system --uid 1001 nestjs
 
 # Copy the completely isolated and pruned production app
 COPY --from=installer --chown=nestjs:nodejs /app/pruned ./
+COPY --from=installer --chown=nestjs:nodejs /app/apps/backend/dist ./dist
 
 USER nestjs
 

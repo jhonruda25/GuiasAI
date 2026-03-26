@@ -21,15 +21,22 @@ import type { AuthenticatedRequest } from './authenticated-request.interface';
 import { env } from '../../config/env';
 import { Throttle as RateLimit } from '@nestjs/throttler';
 
+const passwordSchema = z
+  .string()
+  .min(8, 'Password must contain at least 8 characters')
+  .max(72, 'Password must contain at most 72 characters')
+  .regex(/[A-Za-z]/, 'Password must contain at least one letter')
+  .regex(/\d/, 'Password must contain at least one number');
+
 const registerSchema = z.object({
-  fullName: z.string().trim().min(2),
-  email: z.string().trim().email(),
-  password: z.string().min(8),
+  fullName: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(255),
+  password: passwordSchema,
 });
 
 const loginSchema = z.object({
-  email: z.string().trim().email(),
-  password: z.string().min(8),
+  email: z.string().trim().email().max(255),
+  password: z.string().min(1),
 });
 
 type RegisterRequest = z.infer<typeof registerSchema>;

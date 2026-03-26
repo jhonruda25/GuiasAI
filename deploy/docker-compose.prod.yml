@@ -1,44 +1,116 @@
-services:
-  backend:
-    image: ${DOCKER_USERNAME}/guiasai-backend:latest
-    container_name: guiasai-backend-prod
-    restart: unless-stopped
-    env_file: [".env"]
-    environment:
-      # OWASP: Explicitly enforce production checks
-      - NODE_ENV=production
-      # Injected safely from Dokploy's UI global variables
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=redis://guiasai-redis:6379
-    networks:
-      - dokploy-network
-    depends_on:
-      - redis
+x-backend-env: &backend-env
+  NODE_ENV: production
+  PORT: 3001
+  FRONTEND_URL: ${FRONTEND_URL}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://guiasai:guiasai@postgres:5432/guiasai}
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+  SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-guiasai_session}
+  SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN}
+  SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-168}
+  AUTH_BCRYPT_ROUNDS: ${AUTH_BCRYPT_ROUNDS:-12}
+  SEED_DEMO_USER: ${SEED_DEMO_USER:-false}
+  GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3-flash-preview}
+  GEMINI_FALLBACK_MODEL: ${GEMINI_FALLBACK_MODEL:-gemini-2.5-flash}
+  GEMINI_IMAGE_MODEL: ${GEMINI_IMAGE_MODEL:-gemini-3.1-flash-image-preview}
+  GEMINI_IMAGE_FALLBACK_MODEL: ${GEMINI_IMAGE_FALLBACK_MODEL:-gemini-2.5-flash-image-preview}
+  SENTRY_DSN: ${SENTRY_DSN:-}
 
-  frontend:
-    image: ${DOCKER_USERNAME}/guiasai-frontend:latest
-    container_name: guiasai-frontend-prod
+services:
+  postgres:
+    image: postgres:16-alpine
     restart: unless-stopped
-    env_file: [".env"]
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://apiguiasai.duckdns.org
-    networks:
-      - dokploy-network
+      POSTGRES_USER: ${POSTGRES_USER:-guiasai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guiasai}
+      POSTGRES_DB: ${POSTGRES_DB:-guiasai}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-guiasai} -d ${POSTGRES_DB:-guiasai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: guiasai-redis-prod
     restart: unless-stopped
     volumes:
-      - redis_data:/data
-    networks:
-      - dokploy-network
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    profiles: ["ops"]
+    restart: "no"
+    command: ["./node_modules/.bin/prisma", "migrate", "deploy", "--schema=prisma/schema.prisma"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    environment: *backend-env
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/readyz').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: apps/frontend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_BASE_URL: ${API_BASE_URL}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  redis_data:
-
-
-networks:
-  dokploy-network:
-    external: true
+  postgres_data_prod:
+  redis_data_prod:

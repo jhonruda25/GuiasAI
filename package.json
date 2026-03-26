@@ -10,12 +10,15 @@
     "dev:worker": "pnpm --filter backend start:worker:dev",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:migrate": "pnpm --filter backend exec prisma migrate deploy",
-    "db:generate": "pnpm --filter backend exec prisma generate",
+    "compose:local:up": "docker compose -f docker-compose.local.yml up -d --build",
+    "compose:local:down": "docker compose -f docker-compose.local.yml down",
+    "compose:prod:config": "docker compose -f docker-compose.prod.yml config",
+    "db:migrate": "pnpm --filter backend run db:migrate:deploy",
+    "db:generate": "pnpm --filter backend run db:generate:client",
     "db:generate:safe": "powershell -ExecutionPolicy Bypass -File ./scripts/prisma-generate-safe.ps1",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "prisma:validate": "pnpm --filter backend exec prisma validate",
+    "prisma:validate": "pnpm --filter backend run prisma:validate",
     "smoke:test:local": "node ./scripts/smoke-test-local.mjs"
   },
   "keywords": [],
@@ -30,10 +33,6 @@
     "ts-node-dev": "2.0.0",
     "turbo": "2.8.13",
     "typescript": "5.9.3"
-  },
-  "dependencies": {
-    "@prisma/client": "5.22.0",
-    "prisma": "5.22.0"
   },
   "pnpm": {
     "overrides": {

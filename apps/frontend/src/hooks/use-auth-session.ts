@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AxiosError } from 'axios';
 import { getCurrentUser } from '@/services/auth.api';
 import { useSessionStore } from '@/store/session.store';
 
 export function useAuthSession() {
-  const { user, loading, hydrated, setLoading, setUser, reset } = useSessionStore();
+  const { user, loading, hydrated, setLoading, setUser } = useSessionStore();
 
   useEffect(() => {
     if (hydrated) {
@@ -23,7 +22,7 @@ export function useAuthSession() {
         if (isMounted) {
           setUser(currentUser);
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           // No user found or network error - stay logged out
           setUser(null);
@@ -41,7 +40,7 @@ export function useAuthSession() {
     return () => {
       isMounted = false;
     };
-  }, [hydrated, reset, setLoading, setUser]);
+  }, [hydrated, setLoading, setUser]);
 
   return {
     user,

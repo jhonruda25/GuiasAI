@@ -21,7 +21,7 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --from=builder /app/out/json/ .
 # Instalar respetando versiones exactas permitiendo actualizar el lockfile internamente
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copiar el código fuente y herramientas de compilación
 COPY --from=builder /app/out/full/ .
@@ -65,4 +65,4 @@ EXPOSE 3001
 ENV PORT=3001
 
 # Ejecutar el migrador, seed y correr NestJS directamente desde el entrypoint estático
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && ./node_modules/.bin/prisma db seed --schema=prisma/schema.prisma && node dist/main.js"]
+CMD ["node", "dist/main.js"]

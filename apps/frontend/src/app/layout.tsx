@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Literata, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
+export const dynamic = 'force-dynamic';
+
 const displayFont = Literata({
   variable: "--font-display",
   subsets: ["latin"],
@@ -32,7 +34,7 @@ export default function RootLayout({
       >
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__ENV = { API_BASE_URL: '${process.env.API_BASE_URL || ""}' }`,
+            __html: `window.__ENV = { API_BASE_URL: '${process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || ""}' }`,
           }}
         />
         {children}

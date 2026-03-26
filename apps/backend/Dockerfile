@@ -29,7 +29,8 @@ RUN pnpm turbo run build --filter=backend
 RUN npx esbuild apps/backend/prisma/seed.ts --bundle --platform=node --format=cjs --external:@prisma/client --external:bcryptjs --outfile=apps/backend/prisma/seed.js
 
 # Extraer solo archivos de entorno de producción aislados sin symlinks (Reemplaza a prune)
-RUN pnpm deploy --filter backend --prod --legacy /app/pruned
+RUN pnpm deploy --filter backend --prod --legacy /app/pruned \
+    && cp -r apps/backend/dist /app/pruned/dist
 
 # Generate Prisma client again inside the pruned directory to ensure it is in local node_modules
 WORKDIR /app/pruned
@@ -55,4 +56,4 @@ USER nestjs
 
 EXPOSE 3001
 ENV PORT=3001
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && ./node_modules/.bin/prisma db seed --schema=prisma/schema.prisma && node dist/main"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && ./node_modules/.bin/prisma db seed --schema=prisma/schema.prisma && node dist/main.js"]

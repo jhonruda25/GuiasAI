@@ -7,7 +7,7 @@ FROM base AS builder
 # Agregar dependencias nativas para construir el entorno
 RUN apk update && apk add --no-cache libc6-compat
 WORKDIR /app
-RUN pnpm install -g turbo
+RUN pnpm install -g turbo@2.8.13
 COPY . .
 # Extraer solo el workspace del backend
 RUN turbo prune backend --docker
@@ -20,8 +20,9 @@ WORKDIR /app
 # Primero copiar solo el lockfile y package.jsons
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --from=builder /app/out/json/ .
-# Instalar respetando versiones exactas permitiendo actualizar el lockfile internamente
-RUN pnpm install --frozen-lockfile
+# Turbo prune --docker puede omitir importers de workspaces enlazados en el lockfile podado.
+# Permitimos que pnpm resuelva ese lockfile interno sin tocar el lockfile versionado del repo.
+RUN pnpm install --no-frozen-lockfile
 
 # Copiar el código fuente y herramientas de compilación
 COPY --from=builder /app/out/full/ .

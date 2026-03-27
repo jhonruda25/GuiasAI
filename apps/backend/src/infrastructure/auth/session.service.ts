@@ -84,7 +84,7 @@ export class SessionService {
     return {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       domain: env.SESSION_COOKIE_DOMAIN || undefined,
       expires: expiresAt,
       path: '/',

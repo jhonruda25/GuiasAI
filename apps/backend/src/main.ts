@@ -12,8 +12,10 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
   app.useGlobalFilters(new SentryExceptionFilter());
+  const frontendUrl = env.FRONTEND_URL.replace(/\/$/, '');
+  
   app.enableCors({
-    origin: [env.FRONTEND_URL],
+    origin: [frontendUrl, `${frontendUrl}/`],
     credentials: true,
   });
   const port = env.PORT;

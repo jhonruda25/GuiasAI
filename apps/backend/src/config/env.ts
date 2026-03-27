@@ -15,6 +15,12 @@ const envSchema = z.object({
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(168),
   AUTH_BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-3-flash-preview'),
+  GEMINI_FALLBACK_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_IMAGE_MODEL: z.string().default('gemini-3.1-flash-image-preview'),
+  GEMINI_IMAGE_FALLBACK_MODEL: z
+    .string()
+    .default('gemini-2.5-flash-image-preview'),
   SENTRY_DSN: z
     .string()
     .transform((v) => (v === '' ? undefined : v))

@@ -16,6 +16,13 @@ interface HighDemandError {
   }>;
 }
 
+interface AiObjectGenerationError {
+  text?: string;
+  cause?: {
+    text?: string;
+  };
+}
+
 @Injectable()
 export class VercelAiGeneratorService implements IAiGeneratorService {
   private readonly logger = new Logger(VercelAiGeneratorService.name);
@@ -42,57 +49,64 @@ export class VercelAiGeneratorService implements IAiGeneratorService {
     activities?: string[],
   ) {
     const languageName =
-      language === 'en' ? 'ENGLISH (Inglés)' : 'SPANISH (Español)';
+      language === 'en' ? 'ENGLISH (Ingles)' : 'SPANISH (Espanol)';
 
     const activityInstruction =
       activities && activities.length > 0
-        ? `\nREGLA CRÍTICA ESTRICTA SOBRE ACTIVIDADES:\n¡DEBES GENERAR ÚNICA Y EXACTAMENTE ESTOS ${activities.length} TIPOS DE ACTIVIDADES EN ESTE MISMO ORDEN!\n${activities.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n¡NO GENERES NINGUNA ACTIVIDAD QUE NO ESTÉ EN ESTA LISTA! ¡NO REPITAS TIPO DE ACTIVIDAD SALVO QUE ESTÉ EN LA LISTA!`
-        : `4. Entre 3 y 6 actividades pedagógicas DIFERENTES (crucigramas, sopas de letras, completar oraciones, relacionar conceptos, etc.)`;
+        ? `\nREGLA CRITICA ESTRICTA SOBRE ACTIVIDADES:\nDebes generar unica y exactamente estos ${activities.length} tipos de actividades en este mismo orden:\n${activities.map((a, i) => `${i + 1}. ${a}`).join('\n')}\nNo generes ninguna actividad que no este en esta lista y no repitas tipos fuera de la lista.`
+        : '4. Entre 3 y 6 actividades pedagogicas diferentes (crucigramas, sopas de letras, completar oraciones, relacionar conceptos, etc.)';
 
     return {
       schema: WorkGuideSchema,
-      prompt: `Genera una guía pedagógica estructurada para estudiantes de ${targetAudience} sobre el tema: ${topic}. 
-      
-REQUISITO CRÍTICO DE IDIOMA:
-TODO el contenido pedagógico DEBE generarse en: ${languageName}.
-Esto incluye: el título, las instrucciones de TODAS las actividades, las pistas, los conceptos, las oraciones para completar, las preguntas y la rúbrica de evaluación.
-      
-La guía debe incluir:
+      prompt: `Genera una guia pedagogica estructurada para estudiantes de ${targetAudience} sobre el tema: ${topic}.
+
+REQUISITO CRITICO DE IDIOMA:
+Todo el contenido pedagogico debe generarse en: ${languageName}.
+Esto incluye el titulo, las instrucciones, las pistas, los conceptos, las oraciones para completar, las preguntas y la rubrica de evaluacion.
+
+La guia debe incluir:
 1. Un tema central claro (en ${languageName})
-2. Público objetivo
+2. Publico objetivo
 3. Un puntaje global
-4. Un "theme" (Tema visual) que conste de un color primario (vibrante) y un único emoji representativo a utilizarse en interfaces.
+4. Un "theme" que conste de un color primario vibrante y un unico emoji representativo
 ${activityInstruction}
-6. Una rúbrica global de evaluación (en ${languageName})
+6. Una rubrica global de evaluacion (en ${languageName})
 
-REGLAS OBLIGATORIAS POR TIPO DE ACTIVIDAD (Se ignorarán si la actividad explícitamente pide "EXACTAMENTE X ÍTEMS" en su descripción):
-- WORD_SEARCH: SIEMPRE incluye MÍNIMO 4 palabras en "items" (adapta la dificultad al nivel, pero siempre 4+)
-- CROSSWORD: SIEMPRE incluye MÍNIMO 4 palabras en "items"
-- FILL_BLANKS: SIEMPRE incluye MÍNIMO 3 oraciones en "sentences"
-- MATCH_CONCEPTS: SIEMPRE incluye MÍNIMO 3 pares en "pairs"
-- MULTIPLE_CHOICE: SIEMPRE incluye MÍNIMO 4 preguntas en "questions", cada una con 4 opciones.
-- TRUE_FALSE: SIEMPRE incluye MÍNIMO 4 afirmaciones en "statements", balanceando Verdaderas y Falsas.
-- WORD_SCRAMBLE: SIEMPRE incluye MÍNIMO 5 palabras con sus pistas en "words".
+REGLAS OBLIGATORIAS POR TIPO DE ACTIVIDAD:
+- WORD_SEARCH: minimo 4 palabras en "items"
+- CROSSWORD: minimo 4 palabras en "items"
+- FILL_BLANKS: minimo 3 oraciones en "sentences"
+- MATCH_CONCEPTS: minimo 3 pares en "pairs"
+- MULTIPLE_CHOICE: minimo 4 preguntas en "questions", cada una con 4 opciones
+- TRUE_FALSE: minimo 4 afirmaciones en "statements", balanceando Verdaderas y Falsas
+- WORD_SCRAMBLE: minimo 5 palabras en "words"
 
-REGLA ABSOLUTA DE CANTIDADES:
-Si una de las actividades listadas arriba exige una cantidad exacta de ítems entre paréntesis (e.g. "DEBES GENERAR EXACTAMENTE 10 ÍTEMS PARA ESTA ACTIVIDAD"), DEBES ANULAR LOS MÍNIMOS Y GENERAR EXACTAMENTE ESA CANTIDAD DE ÍTEMS para ese tipo de actividad en específico.
+REGLA ABSOLUTA DE ESTRUCTURA JSON:
+- Cada actividad debe usar la clave "type", nunca "activity_type".
+- Cada actividad debe usar la clave "instructions", nunca "instruction".
+- Cada actividad debe usar la clave "score", nunca "score_per_item".
+- Para TRUE_FALSE, "statements" debe ser un arreglo de objetos con esta forma exacta:
+  [{ "statement": "texto", "is_true": true }]
+- No generes un arreglo separado llamado "answers".
 
-Para Crucigramas y Sopas de Letras:
-- Proporciona la lista de palabras y pistas/definiciones (no generes la matriz, eso lo hará el backend)
-- Palabras en MAYÚSCULAS, cortas y apropiadas para ${targetAudience}
+Para crucigramas y sopas de letras:
+- Proporciona la lista de palabras y pistas/definiciones
+- Palabras en mayusculas, cortas y apropiadas para ${targetAudience}
 - Las palabras y pistas deben estar estrictamente en ${languageName}
 
-Para Relacionar Conceptos:
-- Proporciona pares de concepto-definición apropiados para ${targetAudience} (en ${languageName})
+Para relacionar conceptos:
+- Proporciona pares de concepto-definicion apropiados para ${targetAudience}
 
-Para Completar Oraciones:
-- Proporciona las oraciones completas con la palabra oculta entre corchetes, ej: "El [Sol] es amarillo." (en ${languageName})
+Para completar oraciones:
+- Proporciona las oraciones completas con la palabra oculta entre corchetes, ej: "El [Sol] es amarillo."
 
-Para Actividades de Imagen Secuencial:
-- Proporciona prompts en INGLÉS para generar las imágenes, descriptivos y apropiados para ${targetAudience}
+Para actividades de imagen secuencial:
+- Proporciona prompts en ingles para generar las imagenes
 
-Genera contenido pedagógico de alta calidad apropiado para ${targetAudience}. Adapta el vocabulario y complejidad al nivel, pero SIEMPRE respeta los mínimos de items indicados.`,
-      system: `Eres un experto en pedagogía y diseño de materiales educativos bilingües. Genera guías de trabajo completas, variadas y pedagógicamente sólidas en el idioma solicitado (${languageName}).`,
+Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
+      system:
+        `Eres un experto en pedagogia y diseno de materiales educativos bilingues. ` +
+        `Genera guias de trabajo completas, variadas y pedagogicamente solidas en el idioma solicitado (${languageName}).`,
     };
   }
 
@@ -107,6 +121,100 @@ Genera contenido pedagógico de alta calidad apropiado para ${targetAudience}. A
       (Array.isArray(err?.errors) &&
         err.errors.some((item) => item?.statusCode === 503))
     );
+  }
+
+  private tryRecoverValidationError(error: unknown): unknown {
+    const candidateText =
+      (error as AiObjectGenerationError)?.text ??
+      (error as AiObjectGenerationError)?.cause?.text;
+
+    if (!candidateText) {
+      throw error;
+    }
+
+    try {
+      const parsedText = JSON.parse(candidateText);
+      const normalized = this.normalizeLegacyGuideShape(parsedText);
+      return WorkGuideSchema.parse(normalized);
+    } catch {
+      throw error;
+    }
+  }
+
+  private normalizeLegacyGuideShape(payload: unknown): unknown {
+    if (!payload || typeof payload !== 'object') {
+      return payload;
+    }
+
+    const guide = payload as Record<string, unknown>;
+    const normalizedActivities = Array.isArray(guide.activities)
+      ? guide.activities.map((activity) =>
+          this.normalizeLegacyActivityShape(activity),
+        )
+      : guide.activities;
+
+    return {
+      ...guide,
+      activities: normalizedActivities,
+    };
+  }
+
+  private normalizeLegacyActivityShape(activity: unknown): unknown {
+    if (!activity || typeof activity !== 'object') {
+      return activity;
+    }
+
+    const raw = activity as Record<string, unknown>;
+    const normalizedType =
+      typeof raw.type === 'string'
+        ? raw.type
+        : typeof raw.activity_type === 'string'
+          ? raw.activity_type
+          : raw.type;
+
+    const normalizedInstructions =
+      typeof raw.instructions === 'string'
+        ? raw.instructions
+        : typeof raw.instruction === 'string'
+          ? raw.instruction
+          : raw.instructions;
+
+    let normalizedStatements = raw.statements;
+
+    if (
+      normalizedType === 'TRUE_FALSE' &&
+      Array.isArray(raw.statements) &&
+      Array.isArray(raw.answers)
+    ) {
+      normalizedStatements = raw.statements
+        .map((statement, index) => {
+          const answer = raw.answers?.[index];
+          if (typeof statement !== 'string' || typeof answer !== 'boolean') {
+            return null;
+          }
+
+          return {
+            statement,
+            is_true: answer,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    const normalizedScore =
+      typeof raw.score === 'number'
+        ? raw.score
+        : typeof raw.score_per_item === 'number' && Array.isArray(raw.statements)
+          ? raw.score_per_item * raw.statements.length
+          : raw.score;
+
+    return {
+      ...raw,
+      type: normalizedType,
+      instructions: normalizedInstructions,
+      score: normalizedScore,
+      statements: normalizedStatements,
+    };
   }
 
   async generateWorkGuide(
@@ -126,7 +234,6 @@ Genera contenido pedagógico de alta calidad apropiado para ${targetAudience}. A
       activities,
     );
 
-    // Try primary model
     try {
       this.logger.log(`Attempting with primary model: ${this.primaryModel}`);
       const { object } = await generateObject({
@@ -145,7 +252,11 @@ Genera contenido pedagógico de alta calidad apropiado para ${targetAudience}. A
         });
         return object;
       }
-      throw primaryError;
+
+      this.logger.warn(
+        'Primary generation failed schema validation, attempting to recover legacy JSON shape',
+      );
+      return this.tryRecoverValidationError(primaryError);
     }
   }
 }

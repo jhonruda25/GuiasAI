@@ -186,9 +186,12 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
       Array.isArray(raw.statements) &&
       Array.isArray(raw.answers)
     ) {
-      normalizedStatements = raw.statements
+      const statements = raw.statements as unknown[];
+      const answers = raw.answers as unknown[];
+
+      normalizedStatements = statements
         .map((statement, index) => {
-          const answer = raw.answers?.[index];
+          const answer = answers[index];
           if (typeof statement !== 'string' || typeof answer !== 'boolean') {
             return null;
           }

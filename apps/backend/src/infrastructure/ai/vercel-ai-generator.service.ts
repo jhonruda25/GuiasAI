@@ -3,7 +3,8 @@ import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import type { IAiGeneratorService } from '../../core/domain/ports';
 import {
-  resolveGenerationActivityTypes,
+  resolveGenerationActivityRequests,
+  type ResolvedGenerationActivityRequest,
   type SupportedGenerationActivityType,
 } from '../../core/domain/work-guide-generation';
 import {
@@ -68,9 +69,15 @@ export class VercelAiGeneratorService implements IAiGeneratorService {
     language: string,
     activities?: string[],
   ): Promise<unknown> {
-    const resolvedActivities = resolveGenerationActivityTypes(activities);
+    const resolvedActivities = resolveGenerationActivityRequests(activities);
     this.logger.log(
-      `Generating work guide for topic: ${topic}, audience: ${targetAudience}, language: ${language}, activities: ${resolvedActivities.join(', ')}`,
+      `Generating work guide for topic: ${topic}, audience: ${targetAudience}, language: ${language}, activities: ${resolvedActivities
+        .map((activity) =>
+          activity.requestedItemsCount
+            ? `${activity.type}(${activity.requestedItemsCount})`
+            : activity.type,
+        )
+        .join(', ')}`,
     );
 
     const theme = await this.executeStage<z.infer<typeof ThemeSchema>>({
@@ -81,18 +88,21 @@ export class VercelAiGeneratorService implements IAiGeneratorService {
     });
 
     const generatedActivities: GeneratedActivityContent[] = [];
-    for (const activityType of resolvedActivities) {
+    for (const activity of resolvedActivities) {
+      const requestedItemsCount = this.normalizeRequestedItemsCount(activity);
+
       generatedActivities.push(
         await this.executeStage<GeneratedActivityContent>({
           stage: 'activity',
-          schema: ActivityContentSchemaByType[activityType],
-          activityType,
+          schema: ActivityContentSchemaByType[activity.type],
+          activityType: activity.type,
           system: this.buildBaseSystemPrompt(language),
           prompt: this.buildActivityPrompt(
             topic,
             targetAudience,
             language,
-            activityType,
+            activity.type,
+            requestedItemsCount,
           ),
         }),
       );
@@ -101,7 +111,7 @@ export class VercelAiGeneratorService implements IAiGeneratorService {
     const rubric = await this.executeStage<z.infer<typeof RubricGenerationSchema>>({
       stage: 'rubric',
       schema: RubricGenerationSchema,
-      activityTypes: resolvedActivities,
+      activityTypes: resolvedActivities.map((activity) => activity.type),
       system: this.buildBaseSystemPrompt(language),
       prompt: this.buildRubricPrompt(
         topic,
@@ -157,7 +167,13 @@ Reglas:
     targetAudience: string,
     language: string,
     activityType: SupportedGenerationActivityType,
+    requestedItemsCount?: number,
   ): string {
+    const itemCountRule = this.buildItemCountRule(
+      activityType,
+      requestedItemsCount,
+    );
+
     const rulesByActivity: Record<SupportedGenerationActivityType, string> = {
       WORD_SEARCH: `Shape exacto:
 {
@@ -168,7 +184,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente entre 4 y 8 items.
+- ${itemCountRule}
 - Todas las palabras en MAYUSCULAS.
 - Sin "score", "title", "topic" ni otras claves.`,
       CROSSWORD: `Shape exacto:
@@ -180,7 +196,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente entre 4 y 8 items.
+- ${itemCountRule}
 - Todas las palabras en MAYUSCULAS.
 - Sin "score", "title", "topic" ni otras claves.`,
       FILL_BLANKS: `Shape exacto:
@@ -192,7 +208,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente entre 3 y 6 oraciones.
+- ${itemCountRule}
 - Cada "full_sentence" debe contener la palabra oculta entre corchetes.
 - "hidden_word" debe coincidir exactamente con la palabra entre corchetes.
 - Sin "score", "title", "topic" ni otras claves.`,
@@ -205,7 +221,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente entre 3 y 6 pares.
+- ${itemCountRule}
 - Sin "score", "title", "topic" ni otras claves.`,
       MULTIPLE_CHOICE: `Shape exacto:
 {
@@ -220,7 +236,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente 4 preguntas.
+- ${itemCountRule}
 - Cada pregunta debe tener exactamente 4 opciones.
 - "correct_answer" debe coincidir exactamente con una opcion.
 - Sin "score", "title", "topic" ni otras claves.`,
@@ -233,7 +249,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente 4 afirmaciones.
+- ${itemCountRule}
 - Debe haber al menos 1 verdadera y 1 falsa.
 - Sin "score", "title", "topic" ni otras claves.`,
       WORD_SCRAMBLE: `Shape exacto:
@@ -245,7 +261,7 @@ Reglas:
   ]
 }
 Reglas:
-- Genera exactamente 5 palabras.
+- ${itemCountRule}
 - Todas las palabras en MAYUSCULAS.
 - No uses "scrambled".
 - Sin "score", "title", "topic" ni otras claves.`,
@@ -261,6 +277,77 @@ ${rulesByActivity[activityType]}
 No cambies el valor de "type".
 No devuelvas un arreglo.
 No incluyas markdown ni explicaciones.`;
+  }
+
+  private normalizeRequestedItemsCount(
+    activity: ResolvedGenerationActivityRequest,
+  ): number | undefined {
+    if (!activity.requestedItemsCount) {
+      return undefined;
+    }
+
+    const limitsByType: Record<
+      SupportedGenerationActivityType,
+      { min: number; max: number }
+    > = {
+      WORD_SEARCH: { min: 4, max: 15 },
+      CROSSWORD: { min: 4, max: 15 },
+      FILL_BLANKS: { min: 3, max: 10 },
+      MATCH_CONCEPTS: { min: 3, max: 10 },
+      MULTIPLE_CHOICE: { min: 4, max: 10 },
+      TRUE_FALSE: { min: 4, max: 10 },
+      WORD_SCRAMBLE: { min: 5, max: 10 },
+    };
+
+    const limits = limitsByType[activity.type];
+    const normalized = Math.min(
+      limits.max,
+      Math.max(limits.min, activity.requestedItemsCount),
+    );
+
+    if (normalized !== activity.requestedItemsCount) {
+      this.logger.warn(
+        `Requested ${activity.requestedItemsCount} items for ${activity.type} is out of supported range ${limits.min}-${limits.max}; clamped to ${normalized}`,
+      );
+    }
+
+    return normalized;
+  }
+
+  private buildItemCountRule(
+    activityType: SupportedGenerationActivityType,
+    requestedItemsCount?: number,
+  ): string {
+    if (requestedItemsCount) {
+      if (activityType === 'FILL_BLANKS') {
+        return `Genera exactamente ${requestedItemsCount} oraciones.`;
+      }
+      if (activityType === 'MATCH_CONCEPTS') {
+        return `Genera exactamente ${requestedItemsCount} pares.`;
+      }
+      if (activityType === 'MULTIPLE_CHOICE') {
+        return `Genera exactamente ${requestedItemsCount} preguntas.`;
+      }
+      if (activityType === 'TRUE_FALSE') {
+        return `Genera exactamente ${requestedItemsCount} afirmaciones.`;
+      }
+      if (activityType === 'WORD_SCRAMBLE') {
+        return `Genera exactamente ${requestedItemsCount} palabras.`;
+      }
+      return `Genera exactamente ${requestedItemsCount} items.`;
+    }
+
+    const defaultRules: Record<SupportedGenerationActivityType, string> = {
+      WORD_SEARCH: 'Genera exactamente entre 4 y 8 items.',
+      CROSSWORD: 'Genera exactamente entre 4 y 8 items.',
+      FILL_BLANKS: 'Genera exactamente entre 3 y 6 oraciones.',
+      MATCH_CONCEPTS: 'Genera exactamente entre 3 y 6 pares.',
+      MULTIPLE_CHOICE: 'Genera exactamente 4 preguntas.',
+      TRUE_FALSE: 'Genera exactamente 4 afirmaciones.',
+      WORD_SCRAMBLE: 'Genera exactamente 5 palabras.',
+    };
+
+    return defaultRules[activityType];
   }
 
   private buildRubricPrompt(

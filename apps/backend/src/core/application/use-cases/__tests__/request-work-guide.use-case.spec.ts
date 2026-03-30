@@ -85,6 +85,38 @@ describe('RequestWorkGuideUseCase', () => {
     );
   });
 
+  it('should accept decorated activity labels for supported activity types', async () => {
+    const mockGuide = createMockGuide();
+    const dto: CreateWorkGuideDto = {
+      topic: 'Ciencias Naturales',
+      targetAudience: 'Primaria',
+      language: 'es',
+      activities: [
+        'MATCH_CONCEPTS - Relacionar conceptos (DEBES GENERAR EXACTAMENTE 4 ITEMS PARA ESTA ACTIVIDAD)',
+      ],
+    };
+
+    mockRepository.create.mockResolvedValue(mockGuide);
+    mockRepository.updateStatus.mockResolvedValue(
+      createMockGuide({ status: 'GENERATING' }),
+    );
+    mockQueueProducer.enqueueGeneration.mockResolvedValue();
+
+    await expect(useCase.execute(dto, 'user-1')).resolves.toEqual({
+      guideId: 'test-uuid',
+      status: 'GENERATING',
+    });
+
+    expect(mockRepository.create).toHaveBeenCalledWith(dto, 'user-1');
+    expect(mockQueueProducer.enqueueGeneration).toHaveBeenCalledWith(
+      'test-uuid',
+      'Ciencias Naturales',
+      'Primaria',
+      'es',
+      dto.activities,
+    );
+  });
+
   it('should throw if repository fails', async () => {
     mockRepository.create.mockRejectedValue(new Error('Database error'));
 

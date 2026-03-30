@@ -148,6 +148,9 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
 Reglas estrictas de reparacion:
 - Conserva el tema, el publico, el puntaje, la rubrica y el sentido pedagogico.
 - Corrige solo la estructura.
+- La clave superior debe ser "topic", nunca "title".
+- En "theme" debes usar "icon_emoji", nunca "emoji".
+- La rubrica global debe estar en "global_rubric", nunca en "evaluation_rubric".
 - Usa "type", "instructions" y "score".
 - WORD_SEARCH/CROSSWORD: convierte strings en objetos { "word", "clue_or_definition" }.
 - FILL_BLANKS: convierte strings con [palabra] en objetos { "full_sentence", "hidden_word" }.
@@ -208,10 +211,126 @@ ${rawJson}`;
           this.normalizeLegacyActivityShape(activity),
         )
       : guide.activities;
+    const normalizedTopic =
+      typeof guide.topic === 'string'
+        ? guide.topic
+        : typeof guide.title === 'string'
+          ? guide.title
+          : guide.topic;
+
+    const normalizedTheme =
+      guide.theme && typeof guide.theme === 'object'
+        ? {
+            ...(guide.theme as Record<string, unknown>),
+            icon_emoji:
+              typeof (guide.theme as Record<string, unknown>).icon_emoji ===
+              'string'
+                ? (guide.theme as Record<string, unknown>).icon_emoji
+                : typeof (guide.theme as Record<string, unknown>).emoji ===
+                    'string'
+                  ? (guide.theme as Record<string, unknown>).emoji
+                  : (guide.theme as Record<string, unknown>).icon_emoji,
+          }
+        : guide.theme;
+
+    const activityTypes = Array.isArray(normalizedActivities)
+      ? normalizedActivities
+          .map((activity) =>
+            activity && typeof activity === 'object'
+              ? (activity as Record<string, unknown>).type
+              : undefined,
+          )
+          .filter((value): value is string => typeof value === 'string')
+      : [];
+
+    const normalizeRubricCriteria = (criteria: unknown) => {
+      if (!Array.isArray(criteria)) {
+        return criteria;
+      }
+
+      return criteria.map((criterion, index) => {
+        if (!criterion || typeof criterion !== 'object') {
+          return criterion;
+        }
+
+        const rawCriterion = criterion as Record<string, unknown>;
+        const performanceLevels =
+          rawCriterion.performance_levels &&
+          typeof rawCriterion.performance_levels === 'object'
+            ? (rawCriterion.performance_levels as Record<string, unknown>)
+            : undefined;
+
+        return {
+          ...rawCriterion,
+          activity_type:
+            typeof rawCriterion.activity_type === 'string'
+              ? rawCriterion.activity_type
+              : activityTypes[index] ?? activityTypes[0],
+          criteria_description:
+            typeof rawCriterion.criteria_description === 'string'
+              ? rawCriterion.criteria_description
+              : typeof rawCriterion.criterion === 'string'
+                ? rawCriterion.criterion
+                : rawCriterion.criteria_description,
+          levels:
+            rawCriterion.levels && typeof rawCriterion.levels === 'object'
+              ? rawCriterion.levels
+              : performanceLevels
+                ? {
+                    excellent:
+                      typeof performanceLevels.excellent === 'string'
+                        ? performanceLevels.excellent
+                        : typeof performanceLevels.excelente === 'string'
+                          ? performanceLevels.excelente
+                          : '',
+                    good:
+                      typeof performanceLevels.good === 'string'
+                        ? performanceLevels.good
+                        : typeof performanceLevels.bueno === 'string'
+                          ? performanceLevels.bueno
+                          : '',
+                    needs_improvement:
+                      typeof performanceLevels.needs_improvement === 'string'
+                        ? performanceLevels.needs_improvement
+                        : typeof performanceLevels.necesita_mejorar === 'string'
+                          ? performanceLevels.necesita_mejorar
+                          : '',
+                  }
+                : rawCriterion.levels,
+        };
+      });
+    };
+
+    const normalizedGlobalRubric =
+      guide.global_rubric &&
+      typeof guide.global_rubric === 'object' &&
+      !Array.isArray(guide.global_rubric)
+        ? {
+            ...(guide.global_rubric as Record<string, unknown>),
+            criteria: normalizeRubricCriteria(
+              (guide.global_rubric as Record<string, unknown>).criteria,
+            ),
+          }
+        : Array.isArray(guide.evaluation_rubric)
+          ? {
+              global_description:
+                typeof guide.global_description === 'string'
+                  ? guide.global_description
+                  : typeof guide.description === 'string'
+                    ? guide.description
+                    : typeof normalizedTopic === 'string'
+                      ? `Rubrica global para evaluar la guia pedagogica sobre ${normalizedTopic}.`
+                      : 'Rubrica global para evaluar la guia pedagogica generada.',
+              criteria: normalizeRubricCriteria(guide.evaluation_rubric),
+            }
+          : guide.global_rubric;
 
     return {
       ...guide,
+      topic: normalizedTopic,
+      theme: normalizedTheme,
       activities: normalizedActivities,
+      global_rubric: normalizedGlobalRubric,
     };
   }
 

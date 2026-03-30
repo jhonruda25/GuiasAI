@@ -35,6 +35,11 @@ export class VercelAiGeneratorService implements IAiGeneratorService {
   private readonly googleProvider;
   private readonly primaryModel: string;
   private readonly fallbackModel: string;
+  private readonly googleProviderOptions = {
+    google: {
+      structuredOutputs: false,
+    },
+  } as const;
 
   constructor() {
     this.primaryModel = process.env.GEMINI_MODEL || 'gemini-3-flash-preview';
@@ -179,6 +184,7 @@ ${rawJson}`;
       try {
         const { object } = await generateObject({
           model: this.googleProvider(this.fallbackModel),
+          providerOptions: this.googleProviderOptions,
           schema: promptConfig.schema,
           system: promptConfig.system,
           prompt: this.buildRepairPrompt(candidateText),
@@ -248,6 +254,31 @@ ${rawJson}`;
         return pairs;
       }
 
+      if (
+        items.length % 2 === 0 &&
+        items.every((item) => typeof item === 'string')
+      ) {
+        const rawItems = items as string[];
+        const looksPrefixed = rawItems.every((item, index) =>
+          index % 2 === 0
+            ? item.toLowerCase().startsWith('word:')
+            : item.toLowerCase().startsWith('clue_or_definition:'),
+        );
+
+        if (looksPrefixed) {
+          const pairs: Array<{ word: string; clue_or_definition: string }> = [];
+          for (let index = 0; index < rawItems.length; index += 2) {
+            pairs.push({
+              word: rawItems[index].replace(/^word:\s*/i, '').trim(),
+              clue_or_definition: rawItems[index + 1]
+                .replace(/^clue_or_definition:\s*/i, '')
+                .trim(),
+            });
+          }
+          return pairs;
+        }
+      }
+
       return items.map((item) => {
         if (typeof item !== 'string') {
           return item;
@@ -297,6 +328,31 @@ ${rawJson}`;
         return normalized;
       }
 
+      if (
+        pairs.length % 2 === 0 &&
+        pairs.every((item) => typeof item === 'string')
+      ) {
+        const rawPairs = pairs as string[];
+        const looksPrefixed = rawPairs.every((item, index) =>
+          index % 2 === 0
+            ? item.toLowerCase().startsWith('concept:')
+            : item.toLowerCase().startsWith('definition:'),
+        );
+
+        if (looksPrefixed) {
+          const normalized: Array<{ concept: string; definition: string }> = [];
+          for (let index = 0; index < rawPairs.length; index += 2) {
+            normalized.push({
+              concept: rawPairs[index].replace(/^concept:\s*/i, '').trim(),
+              definition: rawPairs[index + 1]
+                .replace(/^definition:\s*/i, '')
+                .trim(),
+            });
+          }
+          return normalized;
+        }
+      }
+
       return pairs.map((pair) => {
         if (typeof pair !== 'string') {
           return pair;
@@ -313,6 +369,63 @@ ${rawJson}`;
     const normalizeMultipleChoiceQuestions = (questions: unknown) => {
       if (!Array.isArray(questions)) {
         return questions;
+      }
+
+      if (
+        questions.length % 3 === 0 &&
+        questions.every((item) => typeof item === 'string')
+      ) {
+        const rawQuestions = questions as string[];
+        const looksPrefixed = rawQuestions.every((item, index) => {
+          const lower = item.toLowerCase();
+          if (index % 3 === 0) return lower.startsWith('question:');
+          if (index % 3 === 1) return lower.startsWith('options:');
+          return lower.startsWith('correct_answer:');
+        });
+
+        if (looksPrefixed) {
+          const normalized: Array<{
+            question: string;
+            options: string[];
+            correct_answer: string;
+          }> = [];
+
+          for (let index = 0; index < rawQuestions.length; index += 3) {
+            const question = rawQuestions[index]
+              .replace(/^question:\s*/i, '')
+              .trim();
+            const rawOptions = rawQuestions[index + 1]
+              .replace(/^options:\s*/i, '')
+              .trim();
+            const correctAnswer = rawQuestions[index + 2]
+              .replace(/^correct_answer:\s*/i, '')
+              .trim();
+
+            let options: string[] = [];
+
+            try {
+              const parsed = JSON.parse(rawOptions) as unknown;
+              if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+                options = parsed;
+              }
+            } catch {
+              options = rawOptions
+                .replace(/^\[/, '')
+                .replace(/\]$/, '')
+                .split(',')
+                .map((item) => item.trim().replace(/^"|"$/g, ''))
+                .filter(Boolean);
+            }
+
+            normalized.push({
+              question,
+              options,
+              correct_answer: correctAnswer,
+            });
+          }
+
+          return normalized;
+        }
       }
 
       return questions.map((question) => {
@@ -393,22 +506,66 @@ ${rawJson}`;
             is_true: statements[index + 1] as boolean,
           });
         }
+      } else if (
+        statements.length % 2 === 0 &&
+        statements.every((item) => typeof item === 'string')
+      ) {
+        const rawStatements = statements as string[];
+        const looksPrefixed = rawStatements.every((item, index) => {
+          const lower = item.toLowerCase();
+          if (index % 2 === 0) return lower.startsWith('statement:');
+          return lower.startsWith('is_true:');
+        });
+
+        if (looksPrefixed) {
+          normalizedStatements = [];
+          for (let index = 0; index < rawStatements.length; index += 2) {
+            const statement = rawStatements[index]
+              .replace(/^statement:\s*/i, '')
+              .trim();
+            const rawValue = rawStatements[index + 1]
+              .replace(/^is_true:\s*/i, '')
+              .trim()
+              .toLowerCase();
+
+            (normalizedStatements as Array<{ statement: string; is_true: boolean }>).push({
+              statement,
+              is_true: rawValue === 'true',
+            });
+          }
+        } else {
+          normalizedStatements = rawStatements.map((statement) => {
+            if (typeof statement !== 'string') {
+              return statement;
+            }
+
+            const match = statement.match(/^(.*)\s+-\s+(true|false)$/i);
+            if (!match) {
+              return statement;
+            }
+
+            return {
+              statement: match[1].trim(),
+              is_true: match[2].toLowerCase() === 'true',
+            };
+          });
+        }
       } else {
-      normalizedStatements = statements.map((statement) => {
-        if (typeof statement !== 'string') {
-          return statement;
-        }
+        normalizedStatements = statements.map((statement) => {
+          if (typeof statement !== 'string') {
+            return statement;
+          }
 
-        const match = statement.match(/^(.*)\s+-\s+(true|false)$/i);
-        if (!match) {
-          return statement;
-        }
+          const match = statement.match(/^(.*)\s+-\s+(true|false)$/i);
+          if (!match) {
+            return statement;
+          }
 
-        return {
-          statement: match[1].trim(),
-          is_true: match[2].toLowerCase() === 'true',
-        };
-      });
+          return {
+            statement: match[1].trim(),
+            is_true: match[2].toLowerCase() === 'true',
+          };
+        });
       }
     }
 
@@ -469,6 +626,7 @@ ${rawJson}`;
       this.logger.log(`Attempting with primary model: ${this.primaryModel}`);
       const { object } = await generateObject({
         model: this.googleProvider(this.primaryModel),
+        providerOptions: this.googleProviderOptions,
         ...promptConfig,
       });
       return object;
@@ -480,6 +638,7 @@ ${rawJson}`;
         try {
           const { object } = await generateObject({
             model: this.googleProvider(this.fallbackModel),
+            providerOptions: this.googleProviderOptions,
             ...promptConfig,
           });
           return object;

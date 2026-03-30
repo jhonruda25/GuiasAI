@@ -234,6 +234,20 @@ ${rawJson}`;
         return items;
       }
 
+      if (
+        items.length % 2 === 0 &&
+        items.every((item) => typeof item === 'string')
+      ) {
+        const pairs: Array<{ word: string; clue_or_definition: string }> = [];
+        for (let index = 0; index < items.length; index += 2) {
+          pairs.push({
+            word: items[index] as string,
+            clue_or_definition: items[index + 1] as string,
+          });
+        }
+        return pairs;
+      }
+
       return items.map((item) => {
         if (typeof item !== 'string') {
           return item;
@@ -269,6 +283,20 @@ ${rawJson}`;
         return pairs;
       }
 
+      if (
+        pairs.length % 2 === 0 &&
+        pairs.every((item) => typeof item === 'string')
+      ) {
+        const normalized: Array<{ concept: string; definition: string }> = [];
+        for (let index = 0; index < pairs.length; index += 2) {
+          normalized.push({
+            concept: (pairs[index] as string).trim(),
+            definition: (pairs[index + 1] as string).trim(),
+          });
+        }
+        return normalized;
+      }
+
       return pairs.map((pair) => {
         if (typeof pair !== 'string') {
           return pair;
@@ -287,7 +315,40 @@ ${rawJson}`;
         return questions;
       }
 
-      return questions;
+      return questions.map((question) => {
+        if (typeof question !== 'string') {
+          return question;
+        }
+
+        const parts = question.split(' - ').map((item) => item.trim());
+        if (parts.length < 6) {
+          return question;
+        }
+
+        const [questionText, optionA, optionB, optionC, optionD] = parts;
+        return {
+          question: questionText,
+          options: [optionA, optionB, optionC, optionD],
+          correct_answer: optionA,
+        };
+      });
+    };
+
+    const normalizeWordScrambleWords = (words: unknown) => {
+      if (!Array.isArray(words)) {
+        return words;
+      }
+
+      return words.map((word) => {
+        if (typeof word !== 'string') {
+          return word;
+        }
+
+        return {
+          word,
+          hint: `Palabra clave relacionada con ${word}.`,
+        };
+      });
     };
 
     let normalizedStatements = raw.statements;
@@ -317,6 +378,22 @@ ${rawJson}`;
 
     if (normalizedType === 'TRUE_FALSE' && Array.isArray(raw.statements)) {
       const statements = raw.statements as unknown[];
+      if (
+        statements.length % 2 === 0 &&
+        statements.every(
+          (item, index) =>
+            (index % 2 === 0 && typeof item === 'string') ||
+            (index % 2 === 1 && typeof item === 'boolean'),
+        )
+      ) {
+        normalizedStatements = [];
+        for (let index = 0; index < statements.length; index += 2) {
+          (normalizedStatements as Array<{ statement: string; is_true: boolean }>).push({
+            statement: statements[index] as string,
+            is_true: statements[index + 1] as boolean,
+          });
+        }
+      } else {
       normalizedStatements = statements.map((statement) => {
         if (typeof statement !== 'string') {
           return statement;
@@ -332,6 +409,7 @@ ${rawJson}`;
           is_true: match[2].toLowerCase() === 'true',
         };
       });
+      }
     }
 
     const normalizedScore =
@@ -362,6 +440,10 @@ ${rawJson}`;
         normalizedType === 'MULTIPLE_CHOICE'
           ? normalizeMultipleChoiceQuestions(raw.questions)
           : raw.questions,
+      words:
+        normalizedType === 'WORD_SCRAMBLE'
+          ? normalizeWordScrambleWords(raw.words)
+          : raw.words,
       statements: normalizedStatements,
     };
   }

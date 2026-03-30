@@ -246,4 +246,31 @@ describe('work-guide-generation.pipeline', () => {
       guide.global_rubric.criteria.map((criterion) => criterion.activity_type),
     ).toEqual(['WORD_SEARCH', 'TRUE_FALSE', 'WORD_SCRAMBLE']);
   });
+
+  it('should fill empty rubric levels with deterministic fallback text', async () => {
+    const rubric = await parseStageResponse({
+      stage: 'rubric',
+      schema: RubricGenerationSchema,
+      model: 'test-model',
+      activityTypes: ['WORD_SEARCH'],
+      text: JSON.stringify({
+        global_description: 'Evaluacion general.',
+        criteria: [
+          {
+            activity_type: 'WORD_SEARCH',
+            criteria_description: 'Identificacion de conceptos',
+            levels: {
+              excellent: '',
+              good: '   ',
+              needs_improvement: '',
+            },
+          },
+        ],
+      }),
+    });
+
+    expect(rubric.criteria[0].levels.excellent.length).toBeGreaterThan(0);
+    expect(rubric.criteria[0].levels.good.length).toBeGreaterThan(0);
+    expect(rubric.criteria[0].levels.needs_improvement.length).toBeGreaterThan(0);
+  });
 });

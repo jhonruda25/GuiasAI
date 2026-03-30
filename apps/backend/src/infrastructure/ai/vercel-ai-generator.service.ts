@@ -304,6 +304,9 @@ Reglas:
 - No uses "rubric".
 - No uses "evaluation_rubric".
 - No uses "criterion" ni "criteria" como texto libre en lugar de "criteria_description".
+- Los tres textos de "levels" son obligatorios y no pueden ser vacios.
+- Esta prohibido devolver "", " ", null o campos omitidos dentro de "levels".
+- Si no sabes redactar un nivel perfecto, escribe una frase breve pero no vacia.
 - No devuelvas un arreglo en la raiz.
 - No incluyas markdown ni explicaciones.`;
   }

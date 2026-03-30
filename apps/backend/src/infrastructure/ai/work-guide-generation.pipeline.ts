@@ -564,6 +564,36 @@ function normalizeRubricPayload(
         ? candidate.rubric
         : rubric.criteria;
 
+  const getNonEmptyString = (value: unknown): string | undefined => {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const buildFallbackLevel = (
+    level: 'excellent' | 'good' | 'needs_improvement',
+    criteriaDescription: string,
+    activityType: string,
+  ): string => {
+    const normalizedCriteriaDescription =
+      criteriaDescription.trim().length > 0
+        ? criteriaDescription.trim()
+        : `la actividad ${activityType}`;
+
+    if (level === 'excellent') {
+      return `Demuestra un dominio excelente de ${normalizedCriteriaDescription}.`;
+    }
+
+    if (level === 'good') {
+      return `Demuestra un buen dominio de ${normalizedCriteriaDescription}, con errores menores.`;
+    }
+
+    return `Necesita refuerzo en ${normalizedCriteriaDescription}.`;
+  };
+
   const normalizedCriteria = Array.isArray(rawCriteria)
     ? rawCriteria.map((criterion, index) => {
         if (!criterion || typeof criterion !== 'object') {
@@ -571,6 +601,15 @@ function normalizeRubricPayload(
         }
 
         const rawCriterion = criterion as Record<string, unknown>;
+        const resolvedActivityType =
+          typeof rawCriterion.activity_type === 'string'
+            ? rawCriterion.activity_type
+            : activityTypes[index] ?? activityTypes[0];
+        const resolvedCriteriaDescription =
+          getNonEmptyString(rawCriterion.criteria_description) ??
+          getNonEmptyString(rawCriterion.criteria) ??
+          getNonEmptyString(rawCriterion.criterion) ??
+          `Evaluacion de la actividad ${resolvedActivityType}`;
         const performanceLevels =
           rawCriterion.performance_levels &&
           typeof rawCriterion.performance_levels === 'object'
@@ -578,43 +617,36 @@ function normalizeRubricPayload(
             : undefined;
 
         return {
-          activity_type:
-            typeof rawCriterion.activity_type === 'string'
-              ? rawCriterion.activity_type
-              : activityTypes[index] ?? activityTypes[0],
-          criteria_description:
-            typeof rawCriterion.criteria_description === 'string'
-              ? rawCriterion.criteria_description
-              : typeof rawCriterion.criteria === 'string'
-                ? rawCriterion.criteria
-                : typeof rawCriterion.criterion === 'string'
-                  ? rawCriterion.criterion
-                  : '',
+          activity_type: resolvedActivityType,
+          criteria_description: resolvedCriteriaDescription,
           levels: {
             excellent:
-              typeof rawCriterion.excellent === 'string'
-                ? rawCriterion.excellent
-                : typeof performanceLevels?.excellent === 'string'
-                  ? performanceLevels.excellent
-                  : typeof performanceLevels?.excelente === 'string'
-                    ? performanceLevels.excelente
-                    : '',
+              getNonEmptyString(rawCriterion.excellent) ??
+              getNonEmptyString(performanceLevels?.excellent) ??
+              getNonEmptyString(performanceLevels?.excelente) ??
+              buildFallbackLevel(
+                'excellent',
+                resolvedCriteriaDescription,
+                resolvedActivityType,
+              ),
             good:
-              typeof rawCriterion.good === 'string'
-                ? rawCriterion.good
-                : typeof performanceLevels?.good === 'string'
-                  ? performanceLevels.good
-                  : typeof performanceLevels?.bueno === 'string'
-                    ? performanceLevels.bueno
-                    : '',
+              getNonEmptyString(rawCriterion.good) ??
+              getNonEmptyString(performanceLevels?.good) ??
+              getNonEmptyString(performanceLevels?.bueno) ??
+              buildFallbackLevel(
+                'good',
+                resolvedCriteriaDescription,
+                resolvedActivityType,
+              ),
             needs_improvement:
-              typeof rawCriterion.needs_improvement === 'string'
-                ? rawCriterion.needs_improvement
-                : typeof performanceLevels?.needs_improvement === 'string'
-                  ? performanceLevels.needs_improvement
-                  : typeof performanceLevels?.necesita_mejorar === 'string'
-                    ? performanceLevels.necesita_mejorar
-                    : '',
+              getNonEmptyString(rawCriterion.needs_improvement) ??
+              getNonEmptyString(performanceLevels?.needs_improvement) ??
+              getNonEmptyString(performanceLevels?.necesita_mejorar) ??
+              buildFallbackLevel(
+                'needs_improvement',
+                resolvedCriteriaDescription,
+                resolvedActivityType,
+              ),
           },
         };
       })

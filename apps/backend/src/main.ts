@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -9,9 +10,31 @@ import { initializeSentry } from './infrastructure/observability/sentry';
 async function bootstrap() {
   initializeSentry('api');
   const app = await NestFactory.create(AppModule);
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: [`'self'`],
+          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://cdn.jsdelivr.net'],
+          scriptSrc: [`'self'`, `'unsafe-inline'`, 'https://cdn.jsdelivr.net'],
+          imgSrc: [`'self'`, 'data:', 'https://validator.swagger.io'],
+        },
+      },
+    }),
+  );
   app.use(cookieParser());
   app.useGlobalFilters(new SentryExceptionFilter());
+
+  const config = new DocumentBuilder()
+    .setTitle('GuiasAI API')
+    .setDescription('The GuiasAI API documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api', app, document);
   const frontendUrl = env.FRONTEND_URL.replace(/\/$/, '');
   const origins = [frontendUrl, `${frontendUrl}/`].filter(Boolean);
 

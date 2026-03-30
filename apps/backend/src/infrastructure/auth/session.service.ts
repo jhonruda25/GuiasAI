@@ -25,6 +25,8 @@ export class SessionService {
       },
     });
 
+    console.log(`[Session] Created session for user ${userId}, tokenHash: ${tokenHash}`);
+
     return {
       token,
       expiresAt,
@@ -45,6 +47,7 @@ export class SessionService {
     });
 
     if (!session) {
+      console.warn(`[Session] Token provided but no session found for tokenHash: ${tokenHash}`);
       return null;
     }
 
@@ -81,10 +84,12 @@ export class SessionService {
   }
 
   getCookieOptions(expiresAt: Date): CookieOptions {
+    const isProd = env.NODE_ENV === 'production';
+    
     return {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: isProd, // Must be true for SameSite: None
+      sameSite: isProd ? 'none' : 'lax', // Use 'none' for cross-domain production
       domain: env.SESSION_COOKIE_DOMAIN || undefined,
       expires: expiresAt,
       path: '/',

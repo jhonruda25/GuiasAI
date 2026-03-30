@@ -88,8 +88,8 @@ export class SessionService {
     
     return {
       httpOnly: true,
-      secure: isProd, // Must be true for SameSite: None
-      sameSite: isProd ? 'none' : 'lax', // Use 'none' for cross-domain production
+      secure: isProd,
+      sameSite: 'lax', // Now same-origin thanks to the proxy!
       domain: env.SESSION_COOKIE_DOMAIN || undefined,
       expires: expiresAt,
       path: '/',

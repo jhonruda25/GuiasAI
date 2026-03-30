@@ -13,5 +13,5 @@ const isClient = typeof window !== "undefined";
 
 export const API_BASE_URL =
   runtimeApiBaseUrl ||
-  (isClient ? "" : process.env.NEXT_PUBLIC_API_URL) ||
-  "http://localhost:3001";
+  (isClient ? '' : process.env.NEXT_PUBLIC_API_URL) ||
+  '';

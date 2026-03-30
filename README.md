@@ -24,9 +24,9 @@ Dokploy maneja dominio y HTTPS. La recomendacion es usar:
 Con eso la sesion puede usar:
 
 - `FRONTEND_URL=https://app.tudominio.com`
-- `NEXT_PUBLIC_API_URL=https://api.tudominio.com`
 - `API_BASE_URL=https://api.tudominio.com`
-- `SESSION_COOKIE_DOMAIN=.tudominio.com`
+- `NEXT_PUBLIC_API_URL=` para que el navegador use el proxy same-origin de Next
+- `SESSION_COOKIE_DOMAIN=` mientras frontend y backend se comuniquen por el proxy
 
 ## Variables importantes
 
@@ -44,7 +44,7 @@ Con eso la sesion puede usar:
 ### Frontend
 
 - `API_BASE_URL`
-- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_API_URL` opcional
 - `NEXT_PUBLIC_SENTRY_DSN`
 - `SENTRY_DSN` opcional
 
@@ -142,8 +142,8 @@ Usa `docker-compose.prod.yml` como stack principal. Incluye:
 # copia este bloque como base a .env.production
 FRONTEND_URL=https://app.tudominio.com
 API_BASE_URL=https://api.tudominio.com
-NEXT_PUBLIC_API_URL=https://api.tudominio.com
-SESSION_COOKIE_DOMAIN=.tudominio.com
+NEXT_PUBLIC_API_URL=
+SESSION_COOKIE_DOMAIN=
 DATABASE_URL=postgresql://guiasai:password-fuerte@postgres:5432/guiasai
 GOOGLE_GENERATIVE_AI_API_KEY=replace-me
 SEED_DEMO_USER=false
@@ -169,12 +169,18 @@ No habilites `SEED_DEMO_USER` en produccion.
 
 ### Checklist de despliegue
 
-- configura `FRONTEND_URL`, `API_BASE_URL`, `NEXT_PUBLIC_API_URL` y `SESSION_COOKIE_DOMAIN` con tus dominios finales
+- configura `FRONTEND_URL` y `API_BASE_URL` con tus dominios finales
+- deja `NEXT_PUBLIC_API_URL` vacio si quieres auth por cookie via proxy same-origin
+- deja `SESSION_COOKIE_DOMAIN` vacio mientras uses el proxy same-origin
 - ejecuta la tarea `migrate` antes de publicar trafico
 - publica `frontend` en `app.<dominio>` y `backend` en `api.<dominio>`
 - verifica `GET /healthz` y `GET /readyz` en backend
 - confirma que `worker` procese una guia de prueba hasta `COMPLETED`
 - verifica login, logout, registro y acceso al historial
+
+### Nota sobre DuckDNS
+
+`duckdns.org` aparece en la Public Suffix List, asi que el navegador no acepta cookies compartidas para `.duckdns.org`. Si despliegas en subdominios como `guiasai.duckdns.org` y `apiguiasai.duckdns.org`, no dependas de `SESSION_COOKIE_DOMAIN=.duckdns.org`; usa el proxy same-origin o un dominio propio.
 
 ## Seguridad
 

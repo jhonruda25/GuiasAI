@@ -34,7 +34,7 @@ export default function RootLayout({
       >
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__ENV = { API_BASE_URL: '${process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || ""}' }`,
+            __html: `window.__ENV = { API_BASE_URL: '${process.env.NEXT_PUBLIC_API_URL || ""}' }`,
           }}
         />
         {children}

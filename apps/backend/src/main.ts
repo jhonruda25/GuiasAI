@@ -13,13 +13,26 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalFilters(new SentryExceptionFilter());
   const frontendUrl = env.FRONTEND_URL.replace(/\/$/, '');
-  
+  const origins = [frontendUrl, `${frontendUrl}/`].filter(Boolean);
+
+  console.log(`[CORS] Allowing origins: ${origins.join(', ')}`);
+
   app.enableCors({
-    origin: [frontendUrl, `${frontendUrl}/`],
+    origin: origins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'X-App-Version',
+    ],
   });
+
   const port = env.PORT;
   await app.listen(port, '0.0.0.0');
   console.log(`Backend is running on: http://localhost:${port}`);
+  console.log(`Environment: ${env.NODE_ENV}`);
 }
 void bootstrap();

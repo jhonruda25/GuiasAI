@@ -23,7 +23,7 @@ RUN pnpm install --no-frozen-lockfile
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 ENV NODE_ENV=production
-# Compilar frontend (Next.js creará la carpeta standalone optimizada)
+# Compilar frontend (Next.js creara la carpeta standalone optimizada)
 RUN pnpm turbo run build --filter=frontend
 
 FROM base AS runner

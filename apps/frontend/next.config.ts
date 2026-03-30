@@ -11,15 +11,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(currentDir, '../../'),
   },
-  async rewrites() {
-    const backendUrl = process.env.API_BASE_URL || "http://localhost:3001";
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
-  },
 };
 
 export default withSentryConfig(nextConfig, {

@@ -12,33 +12,15 @@ import { TemplateDialog } from "@/components/workspace/template-dialog";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { useWorkGuideSse } from "@/hooks/use-work-guide-sse";
 import {
-  activityCatalog,
   activityInstructionLabels,
+  defaultPresetActivities,
+  normalizeSelectedActivities,
   type SelectedActivity,
 } from "@/lib/work-guide-options";
 import { logoutUser } from "@/services/auth.api";
 import { createWorkGuide, type WorkGuideRecord } from "@/services/work-guide.api";
 import { useSessionStore } from "@/store/session.store";
 import { useWorkGuideStore } from "@/store/work-guide.store";
-
-const defaultActivities: SelectedActivity[] = activityCatalog
-  .filter((item) =>
-    [
-      "WORD_SEARCH",
-      "CROSSWORD",
-      "FILL_BLANKS",
-      "MATCH_CONCEPTS",
-      "SEQUENTIAL_IMAGE_ANALYSIS",
-      "BONUS",
-      "MULTIPLE_CHOICE",
-      "TRUE_FALSE",
-      "WORD_SCRAMBLE",
-    ].includes(item.id),
-  )
-  .map((item) => ({
-    id: item.id,
-    count: item.defaultCount,
-  }));
 
 type WorkspaceTab = "generator" | "history";
 
@@ -52,7 +34,7 @@ export function WorkspaceClient() {
   const [targetAudience, setTargetAudience] = useState("Tercero (3o)");
   const [language, setLanguage] = useState("es");
   const [selectedActivities, setSelectedActivities] =
-    useState<SelectedActivity[]>(defaultActivities);
+    useState<SelectedActivity[]>(defaultPresetActivities);
   const [selectedGuide, setSelectedGuide] = useState<WorkGuideRecord | null>(
     null,
   );
@@ -76,6 +58,13 @@ export function WorkspaceClient() {
     router.replace(`/?${nextParams.toString()}`);
   };
 
+  const replaceActivities = (activities: SelectedActivity[]) => {
+    const normalized = normalizeSelectedActivities(activities);
+    setSelectedActivities(
+      normalized.length > 0 ? normalized : defaultPresetActivities,
+    );
+  };
+
   const handleLoadTemplate = (template: {
     targetAudience: string;
     language: string;
@@ -83,7 +72,7 @@ export function WorkspaceClient() {
   }) => {
     setTargetAudience(template.targetAudience);
     setLanguage(template.language);
-    setSelectedActivities(template.activities);
+    replaceActivities(template.activities);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -103,7 +92,9 @@ export function WorkspaceClient() {
     setError(null);
 
     try {
-      const payloadActivities = selectedActivities.map((activity) => {
+      const payloadActivities = normalizeSelectedActivities(
+        selectedActivities,
+      ).map((activity) => {
         const label = activityInstructionLabels[activity.id] ?? activity.id;
         const countInt = Number(activity.count);
 
@@ -135,6 +126,7 @@ export function WorkspaceClient() {
     reset();
     setTopic("");
     setSelectedGuide(null);
+    setSelectedActivities(defaultPresetActivities);
     updateTab("generator");
   };
 
@@ -151,15 +143,10 @@ export function WorkspaceClient() {
   const toggleActivity = (activityId: string, checked: boolean) => {
     setSelectedActivities((current) => {
       if (checked) {
-        const activity = activityCatalog.find((item) => item.id === activityId);
-        if (!activity || current.some((item) => item.id === activityId)) {
-          return current;
-        }
-
-        return [
+        return normalizeSelectedActivities([
           ...current,
-          { id: activityId, count: activity.defaultCount },
-        ];
+          { id: activityId, count: 1 },
+        ]);
       }
 
       return current.filter((item) => item.id !== activityId);
@@ -173,6 +160,13 @@ export function WorkspaceClient() {
   };
 
   const activeGuide = selectedGuide ?? workGuide;
+  const workspaceMode = activeGuide
+    ? "preview"
+    : status === "generating"
+      ? "generating"
+      : tab === "history"
+        ? "history"
+        : "generator";
 
   if (!hydrated || loading || !user) {
     return (
@@ -188,6 +182,11 @@ export function WorkspaceClient() {
     <>
       <AppShell
         activeTab={tab}
+        workspaceMode={workspaceMode}
+        topic={activeGuide?.topic ?? topic}
+        targetAudience={activeGuide?.targetAudience ?? targetAudience}
+        language={activeGuide?.language ?? language}
+        selectedActivities={selectedActivities}
         onTabChange={updateTab}
         onLogout={() => void handleLogout()}
         user={user}
@@ -221,6 +220,7 @@ export function WorkspaceClient() {
             onLanguageChange={setLanguage}
             onToggleActivity={toggleActivity}
             onActivityCountChange={updateActivityCount}
+            onApplyActivities={replaceActivities}
             onOpenTemplates={() => setTemplatesOpen(true)}
             onSubmit={handleSubmit}
           />

@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "3.0.37",
+    "@ai-sdk/provider-utils": "4.0.17",
     "@nestjs/bullmq": "11.0.4",
     "@nestjs/common": "11.0.21",
     "@nestjs/core": "11.0.21",
@@ -54,6 +55,7 @@
     "eventemitter2": "6.4.9",
     "helmet": "8.1.0",
     "ioredis": "5.8.2",
+    "jsonrepair": "^3.13.1",
     "prisma": "5.22.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1",

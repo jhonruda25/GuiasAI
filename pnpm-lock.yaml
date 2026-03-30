@@ -46,6 +46,9 @@ importers:
       '@ai-sdk/google':
         specifier: 3.0.37
         version: 3.0.37(zod@4.3.6)
+      '@ai-sdk/provider-utils':
+        specifier: 4.0.17
+        version: 4.0.17(zod@4.3.6)
       '@nestjs/bullmq':
         specifier: 11.0.4
         version: 11.0.4(@nestjs/common@11.0.21(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@11.0.21)(bullmq@5.70.4)
@@ -100,6 +103,9 @@ importers:
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
+      jsonrepair:
+        specifier: ^3.13.1
+        version: 3.13.3
       prisma:
         specifier: 5.22.0
         version: 5.22.0
@@ -5120,6 +5126,10 @@ packages:
 
   jsonfile@6.2.0:
     resolution: {integrity: sha512-FGuPw30AdOIUTRMC2OMRtQV+jkVj2cfPqSeWXv1NEAJ1qZ5zb1X6z1mFhbfOB/iy3ssJCD+3KuZ8r8C3uVFlAg==}
+
+  jsonrepair@3.13.3:
+    resolution: {integrity: sha512-BTznj0owIt2CBAH/LTo7+1I5pMvl1e1033LRl/HUowlZmJOIhzC0zbX5bxMngLkfT4WnzPP26QnW5wMr2g9tsQ==}
+    hasBin: true
 
   jspdf@4.2.1:
     resolution: {integrity: sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==}
@@ -12593,6 +12603,8 @@ snapshots:
       universalify: 2.0.1
     optionalDependencies:
       graceful-fs: 4.2.11
+
+  jsonrepair@3.13.3: {}
 
   jspdf@4.2.1:
     dependencies:

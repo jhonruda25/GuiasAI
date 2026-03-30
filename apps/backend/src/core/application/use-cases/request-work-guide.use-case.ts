@@ -1,10 +1,11 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import type {
   IWorkGuideRepository,
   IQueueProducer,
   CreateWorkGuideDto,
 } from '../../domain/ports';
 import { WORK_GUIDE_REPOSITORY, QUEUE_PRODUCER } from '../../domain/ports';
+import { getUnsupportedGenerationActivityTypes } from '../../domain/work-guide-generation';
 
 @Injectable()
 export class RequestWorkGuideUseCase {
@@ -17,6 +18,15 @@ export class RequestWorkGuideUseCase {
   ) {}
 
   async execute(dto: CreateWorkGuideDto, userId: string) {
+    const unsupportedActivities = getUnsupportedGenerationActivityTypes(
+      dto.activities,
+    );
+    if (unsupportedActivities.length > 0) {
+      throw new BadRequestException(
+        `Unsupported activity types for stable generation: ${unsupportedActivities.join(', ')}`,
+      );
+    }
+
     this.logger.log(
       `Creating work guide request for user ${userId}, topic: ${dto.topic}, audience: ${dto.targetAudience}, language: ${dto.language}`,
     );

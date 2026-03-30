@@ -99,4 +99,23 @@ describe('RequestWorkGuideUseCase', () => {
       ),
     ).rejects.toThrow('Database error');
   });
+
+  it('should reject unsupported activity types before creating the guide', async () => {
+    await expect(
+      useCase.execute(
+        {
+          topic: 'Test',
+          targetAudience: 'Test',
+          language: 'es',
+          activities: ['SEQUENTIAL_IMAGE_ANALYSIS'],
+        },
+        'user-1',
+      ),
+    ).rejects.toThrow(
+      'Unsupported activity types for stable generation: SEQUENTIAL_IMAGE_ANALYSIS',
+    );
+
+    expect(mockRepository.create).not.toHaveBeenCalled();
+    expect(mockQueueProducer.enqueueGeneration).not.toHaveBeenCalled();
+  });
 });

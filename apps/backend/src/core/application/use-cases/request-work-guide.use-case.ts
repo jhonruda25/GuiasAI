@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import type {
   IWorkGuideRepository,
   IQueueProducer,
@@ -8,6 +8,8 @@ import { WORK_GUIDE_REPOSITORY, QUEUE_PRODUCER } from '../../domain/ports';
 
 @Injectable()
 export class RequestWorkGuideUseCase {
+  private readonly logger = new Logger(RequestWorkGuideUseCase.name);
+
   constructor(
     @Inject(WORK_GUIDE_REPOSITORY)
     private readonly workGuideRepository: IWorkGuideRepository,
@@ -15,9 +17,17 @@ export class RequestWorkGuideUseCase {
   ) {}
 
   async execute(dto: CreateWorkGuideDto, userId: string) {
+    this.logger.log(
+      `Creating work guide request for user ${userId}, topic: ${dto.topic}, audience: ${dto.targetAudience}, language: ${dto.language}`,
+    );
+
     const workGuide = await this.workGuideRepository.create(dto, userId);
 
+    this.logger.log(`Work guide ${workGuide.id} created with status ${workGuide.status}`);
+
     await this.workGuideRepository.updateStatus(workGuide.id, 'GENERATING');
+
+    this.logger.log(`Work guide ${workGuide.id} moved to GENERATING`);
 
     await this.queueProducer.enqueueGeneration(
       workGuide.id,
@@ -25,6 +35,10 @@ export class RequestWorkGuideUseCase {
       dto.targetAudience,
       dto.language,
       dto.activities,
+    );
+
+    this.logger.log(
+      `Work guide ${workGuide.id} enqueued for generation with ${dto.activities?.length ?? 0} activities`,
     );
 
     return {

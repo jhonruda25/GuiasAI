@@ -1,6 +1,7 @@
 import {
   Injectable,
   Inject,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -9,6 +10,8 @@ import { WORK_GUIDE_REPOSITORY, QUEUE_PRODUCER } from '../../domain/ports';
 
 @Injectable()
 export class RetryWorkGuideUseCase {
+  private readonly logger = new Logger(RetryWorkGuideUseCase.name);
+
   constructor(
     @Inject(WORK_GUIDE_REPOSITORY)
     private readonly workGuideRepository: IWorkGuideRepository,
@@ -16,6 +19,8 @@ export class RetryWorkGuideUseCase {
   ) {}
 
   async execute(id: string, userId: string) {
+    this.logger.log(`Retry requested for work guide ${id} by user ${userId}`);
+
     const workGuide = await this.workGuideRepository.findByIdForUser(
       id,
       userId,
@@ -38,6 +43,8 @@ export class RetryWorkGuideUseCase {
       '',
     );
 
+    this.logger.log(`Work guide ${workGuide.id} reset to GENERATING for retry`);
+
     // Re-enqueue for generation
     await this.queueProducer.enqueueGeneration(
       workGuide.id,
@@ -45,6 +52,8 @@ export class RetryWorkGuideUseCase {
       workGuide.targetAudience,
       workGuide.language,
     );
+
+    this.logger.log(`Work guide ${workGuide.id} re-enqueued for retry`);
 
     return {
       guideId: workGuide.id,

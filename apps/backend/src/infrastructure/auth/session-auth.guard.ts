@@ -17,9 +17,15 @@ export class SessionAuthGuard implements CanActivate {
     const sessionToken = request.cookies?.[env.SESSION_COOKIE_NAME] as
       | string
       | undefined;
+    
+    if (!sessionToken) {
+      console.warn(`[AuthGuard] No session cookie found in request for ${request.url}`);
+    }
+
     const user = await this.sessionService.getUserFromToken(sessionToken);
 
     if (!user) {
+      console.warn(`[AuthGuard] Failed to resolve user from session token for ${request.url}`);
       throw new UnauthorizedException('Authentication required');
     }
 

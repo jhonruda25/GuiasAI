@@ -23,6 +23,12 @@ interface AiObjectGenerationError {
   };
 }
 
+interface PromptConfig {
+  schema: typeof WorkGuideSchema;
+  prompt: string;
+  system: string;
+}
+
 @Injectable()
 export class VercelAiGeneratorService implements IAiGeneratorService {
   private readonly logger = new Logger(VercelAiGeneratorService.name);
@@ -47,7 +53,7 @@ export class VercelAiGeneratorService implements IAiGeneratorService {
     targetAudience: string,
     language: string,
     activities?: string[],
-  ) {
+  ): PromptConfig {
     const languageName =
       language === 'en' ? 'ENGLISH (Ingles)' : 'SPANISH (Espanol)';
 
@@ -85,6 +91,14 @@ REGLA ABSOLUTA DE ESTRUCTURA JSON:
 - Cada actividad debe usar la clave "type", nunca "activity_type".
 - Cada actividad debe usar la clave "instructions", nunca "instruction".
 - Cada actividad debe usar la clave "score", nunca "score_per_item".
+- Para WORD_SEARCH y CROSSWORD, "items" debe ser un arreglo de objetos:
+  [{ "word": "PALABRA", "clue_or_definition": "pista o definicion" }]
+- Para FILL_BLANKS, "sentences" debe ser un arreglo de objetos:
+  [{ "full_sentence": "texto con [palabra]", "hidden_word": "palabra" }]
+- Para MATCH_CONCEPTS, "pairs" debe ser un arreglo de objetos:
+  [{ "concept": "concepto", "definition": "definicion" }]
+- Para MULTIPLE_CHOICE, "questions" debe ser un arreglo de objetos:
+  [{ "question": "pregunta", "options": ["a", "b", "c", "d"], "correct_answer": "a" }]
 - Para TRUE_FALSE, "statements" debe ser un arreglo de objetos con esta forma exacta:
   [{ "statement": "texto", "is_true": true }]
 - No generes un arreglo separado llamado "answers".
@@ -123,7 +137,28 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
     );
   }
 
-  private tryRecoverValidationError(error: unknown): unknown {
+  private buildRepairPrompt(rawJson: string): string {
+    return `Corrige el siguiente JSON para que cumpla exactamente con el esquema esperado de una guia pedagogica.
+
+Reglas estrictas de reparacion:
+- Conserva el tema, el publico, el puntaje, la rubrica y el sentido pedagogico.
+- Corrige solo la estructura.
+- Usa "type", "instructions" y "score".
+- WORD_SEARCH/CROSSWORD: convierte strings en objetos { "word", "clue_or_definition" }.
+- FILL_BLANKS: convierte strings con [palabra] en objetos { "full_sentence", "hidden_word" }.
+- MATCH_CONCEPTS: convierte strings "concepto - definicion" en objetos { "concept", "definition" }.
+- MULTIPLE_CHOICE: convierte cada pregunta al shape { "question", "options", "correct_answer" }.
+- TRUE_FALSE: convierte cada item al shape { "statement", "is_true" }.
+- Devuelve solo JSON valido, sin markdown.
+
+JSON a reparar:
+${rawJson}`;
+  }
+
+  private async tryRecoverValidationError(
+    error: unknown,
+    promptConfig: PromptConfig,
+  ): Promise<unknown> {
     const candidateText =
       (error as AiObjectGenerationError)?.text ??
       (error as AiObjectGenerationError)?.cause?.text;
@@ -137,7 +172,22 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
       const normalized = this.normalizeLegacyGuideShape(parsedText);
       return WorkGuideSchema.parse(normalized);
     } catch {
-      throw error;
+      this.logger.warn(
+        'Local normalization was insufficient, attempting structured repair pass',
+      );
+
+      try {
+        const { object } = await generateObject({
+          model: this.googleProvider(this.fallbackModel),
+          schema: promptConfig.schema,
+          system: promptConfig.system,
+          prompt: this.buildRepairPrompt(candidateText),
+        });
+
+        return object;
+      } catch {
+        throw error;
+      }
     }
   }
 
@@ -179,6 +229,67 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
           ? raw.instruction
           : raw.instructions;
 
+    const normalizeConceptItems = (items: unknown) => {
+      if (!Array.isArray(items)) {
+        return items;
+      }
+
+      return items.map((item) => {
+        if (typeof item !== 'string') {
+          return item;
+        }
+
+        return {
+          word: item,
+          clue_or_definition: `Concepto clave relacionado con ${item}.`,
+        };
+      });
+    };
+
+    const normalizeFillBlanksSentences = (sentences: unknown) => {
+      if (!Array.isArray(sentences)) {
+        return sentences;
+      }
+
+      return sentences.map((sentence) => {
+        if (typeof sentence !== 'string') {
+          return sentence;
+        }
+
+        const match = sentence.match(/\[([^\]]+)\]/);
+        return {
+          full_sentence: sentence,
+          hidden_word: match?.[1] ?? '',
+        };
+      });
+    };
+
+    const normalizePairs = (pairs: unknown) => {
+      if (!Array.isArray(pairs)) {
+        return pairs;
+      }
+
+      return pairs.map((pair) => {
+        if (typeof pair !== 'string') {
+          return pair;
+        }
+
+        const [concept, ...definitionParts] = pair.split(' - ');
+        return {
+          concept: concept?.trim() ?? '',
+          definition: definitionParts.join(' - ').trim(),
+        };
+      });
+    };
+
+    const normalizeMultipleChoiceQuestions = (questions: unknown) => {
+      if (!Array.isArray(questions)) {
+        return questions;
+      }
+
+      return questions;
+    };
+
     let normalizedStatements = raw.statements;
 
     if (
@@ -204,6 +315,25 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
         .filter(Boolean);
     }
 
+    if (normalizedType === 'TRUE_FALSE' && Array.isArray(raw.statements)) {
+      const statements = raw.statements as unknown[];
+      normalizedStatements = statements.map((statement) => {
+        if (typeof statement !== 'string') {
+          return statement;
+        }
+
+        const match = statement.match(/^(.*)\s+-\s+(true|false)$/i);
+        if (!match) {
+          return statement;
+        }
+
+        return {
+          statement: match[1].trim(),
+          is_true: match[2].toLowerCase() === 'true',
+        };
+      });
+    }
+
     const normalizedScore =
       typeof raw.score === 'number'
         ? raw.score
@@ -216,6 +346,22 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
       type: normalizedType,
       instructions: normalizedInstructions,
       score: normalizedScore,
+      items:
+        normalizedType === 'WORD_SEARCH' || normalizedType === 'CROSSWORD'
+          ? normalizeConceptItems(raw.items)
+          : raw.items,
+      sentences:
+        normalizedType === 'FILL_BLANKS'
+          ? normalizeFillBlanksSentences(raw.sentences)
+          : raw.sentences,
+      pairs:
+        normalizedType === 'MATCH_CONCEPTS'
+          ? normalizePairs(raw.pairs)
+          : raw.pairs,
+      questions:
+        normalizedType === 'MULTIPLE_CHOICE'
+          ? normalizeMultipleChoiceQuestions(raw.questions)
+          : raw.questions,
       statements: normalizedStatements,
     };
   }
@@ -249,17 +395,21 @@ Genera contenido pedagogico de alta calidad apropiado para ${targetAudience}.`,
         this.logger.warn(
           `Primary model ${this.primaryModel} is unavailable (503 high demand). Switching to fallback: ${this.fallbackModel}`,
         );
-        const { object } = await generateObject({
-          model: this.googleProvider(this.fallbackModel),
-          ...promptConfig,
-        });
-        return object;
+        try {
+          const { object } = await generateObject({
+            model: this.googleProvider(this.fallbackModel),
+            ...promptConfig,
+          });
+          return object;
+        } catch (fallbackError: unknown) {
+          return this.tryRecoverValidationError(fallbackError, promptConfig);
+        }
       }
 
       this.logger.warn(
         'Primary generation failed schema validation, attempting to recover legacy JSON shape',
       );
-      return this.tryRecoverValidationError(primaryError);
+      return this.tryRecoverValidationError(primaryError, promptConfig);
     }
   }
 }

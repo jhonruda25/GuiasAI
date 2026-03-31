@@ -16,6 +16,7 @@ export interface IWorkGuideRepository {
   create(data: CreateWorkGuideDto, userId: string): Promise<WorkGuideEntity>;
   findById(id: string): Promise<WorkGuideEntity | null>;
   findByIdForUser(id: string, userId: string): Promise<WorkGuideEntity | null>;
+  findCoverByIdForUser(id: string, userId: string): Promise<string | null>;
   findAllForUser(userId: string): Promise<WorkGuideEntity[]>;
   updateStatus(
     id: string,
@@ -23,6 +24,7 @@ export interface IWorkGuideRepository {
     content?: unknown,
     globalScore?: number,
     errorMessage?: string,
+    coverImageDataUrl?: string | null,
   ): Promise<WorkGuideEntity>;
   markAsReviewed(id: string, reviewerName: string): Promise<WorkGuideEntity>;
 }

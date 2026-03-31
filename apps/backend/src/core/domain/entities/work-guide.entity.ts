@@ -15,6 +15,8 @@ export interface WorkGuideEntity {
   reviewed: boolean;
   reviewedBy: string | null;
   reviewedAt: Date | null;
+  hasCover: boolean;
+  coverImageDataUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

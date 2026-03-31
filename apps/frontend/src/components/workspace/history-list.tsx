@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import {
   getAllWorkGuides,
+  getWorkGuideCover,
   getWorkGuideById,
   retryWorkGuide,
   type WorkGuideListItem,
@@ -69,6 +70,12 @@ export function HistoryList({ onOpenGuide }: HistoryListProps) {
   const [loading, setLoading] = useState(true);
   const [loadingGuideId, setLoadingGuideId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<HistoryFilter>("all");
+  const [coverByGuideId, setCoverByGuideId] = useState<Record<string, string>>(
+    {},
+  );
+  const [coverLoadErrorByGuideId, setCoverLoadErrorByGuideId] = useState<
+    Record<string, true>
+  >({});
 
   const fetchGuides = useCallback(async () => {
     setLoading(true);
@@ -117,6 +124,31 @@ export function HistoryList({ onOpenGuide }: HistoryListProps) {
 
     return true;
   });
+
+  useEffect(() => {
+    const guidesToLoad = filteredGuides.filter(
+      (guide) =>
+        guide.hasCover &&
+        !coverByGuideId[guide.id] &&
+        !coverLoadErrorByGuideId[guide.id],
+    );
+
+    guidesToLoad.forEach((guide) => {
+      void getWorkGuideCover(guide.id)
+        .then((coverImageDataUrl) => {
+          setCoverByGuideId((current) => ({
+            ...current,
+            [guide.id]: coverImageDataUrl,
+          }));
+        })
+        .catch(() => {
+          setCoverLoadErrorByGuideId((current) => ({
+            ...current,
+            [guide.id]: true,
+          }));
+        });
+    });
+  }, [filteredGuides, coverByGuideId, coverLoadErrorByGuideId]);
 
   return (
     <Card className="paper-panel overflow-hidden bg-card/95">
@@ -202,6 +234,14 @@ export function HistoryList({ onOpenGuide }: HistoryListProps) {
                     guide.status,
                   )} p-5 text-white`}
                 >
+                  {coverByGuideId[guide.id] ? (
+                    <img
+                      src={coverByGuideId[guide.id]}
+                      alt={`Portada de ${guide.topic}`}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,15,28,0.06),rgba(6,15,28,0.72))]" />
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_42%)]" />
                   <div className="relative">
                     <div className="flex items-start justify-between gap-3">

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FolderCog, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { FolderCog, Lightbulb, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -91,20 +92,46 @@ export function GeneratorForm({
     : 0;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)] fade-in">
-      <Card className="paper-panel overflow-hidden bg-card/96">
+    <div className="grid gap-7 xl:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)] fade-in">
+      <Card className="paper-panel overflow-hidden border-[rgba(33,62,74,0.14)] bg-card/95 shadow-[0_24px_48px_rgba(20,34,56,0.1)]">
         <CardHeader className="gap-3 border-b border-border/60 pb-5">
-          <span className="section-kicker">Crear guia</span>
+          <span className="section-kicker">Modo generador</span>
           <CardTitle className="font-display text-3xl">
-            Configura solo lo importante.
+            Elige el destino de tu aprendizaje.
           </CardTitle>
           <CardDescription className="max-w-2xl text-sm leading-6 text-[var(--ink-soft)]">
-            Tema, curso, idioma y mezcla de actividades. Sin paneles extra ni
-            ruido visual.
+            Configura los parametros clave y deja que la IA arme la guia con
+            estructura editorial y enfoque docente.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-6">
+          <div className="relative mb-6 overflow-hidden rounded-[1.6rem] border border-[rgba(33,62,74,0.12)] bg-[rgba(255,255,255,0.7)] p-3">
+            <div className="relative h-36 overflow-hidden rounded-[1.2rem]">
+              <Image
+                src="/assets/covers/cover-freepik-education.jpg"
+                alt="Cover editorial para guias"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1280px) 100vw, 760px"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(12,30,52,0.64),rgba(12,30,52,0.24)_55%,rgba(231,184,94,0.34))]" />
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 px-4 py-3">
+                <div>
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/80">
+                    Modo studio
+                  </p>
+                  <p className="mt-1 font-display text-2xl leading-none text-white">
+                    Composicion visual con portada
+                  </p>
+                </div>
+                <span className="rounded-full border border-white/35 bg-white/16 px-3 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
+                  Nuevo
+                </span>
+              </div>
+            </div>
+          </div>
+
           <form className="grid gap-6" onSubmit={onSubmit}>
             <section className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
@@ -157,7 +184,7 @@ export function GeneratorForm({
 
             <section className="grid gap-3">
               <div className="flex items-center justify-between gap-3">
-                <Label className="text-sm font-semibold">Receta sugerida</Label>
+                <Label className="text-sm font-semibold">Presets sugeridos</Label>
                 <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
                   {selectedPresetId === "custom" ? "Personalizada" : "Preset"}
                 </span>
@@ -192,10 +219,10 @@ export function GeneratorForm({
               </div>
             </section>
 
-            <section className="rounded-xl border border-dashed border-border/70 bg-muted/25 p-4">
+            <section className="rounded-xl border border-dashed border-border/70 bg-[rgba(238,244,250,0.55)] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-[var(--ink-soft)]">
-                  Personaliza actividades solo si lo necesitas.
+                  Personaliza el catalogo si necesitas ajustar profundidad.
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -292,7 +319,11 @@ export function GeneratorForm({
               <p className="text-sm text-[var(--ink-soft)]">
                 La guia quedara en tu biblioteca y luego en vista previa.
               </p>
-              <Button className="h-12 rounded-full px-6" type="submit" disabled={isSubmitting}>
+              <Button
+                className="h-12 rounded-full bg-[linear-gradient(120deg,var(--primary),#3569b7)] px-6 shadow-[0_14px_28px_rgba(32,70,131,0.3)]"
+                type="submit"
+                disabled={isSubmitting}
+              >
                 <Sparkles className="size-4" />
                 {isSubmitting ? "Preparando..." : "Generar guia"}
               </Button>
@@ -301,55 +332,90 @@ export function GeneratorForm({
         </CardContent>
       </Card>
 
-      <Card className="paper-panel bg-card/96 xl:sticky xl:top-6 xl:self-start">
-        <CardHeader className="gap-2 border-b border-border/60 pb-4">
-          <CardTitle className="font-display text-2xl">Resumen</CardTitle>
-          <CardDescription className="text-sm text-[var(--ink-soft)]">
-            Vista rapida de lo que vas a generar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 pt-4">
-          <div className="rounded-xl border border-border/70 bg-white/80 p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              Tema
-            </p>
-            <p className="mt-2 text-lg font-semibold text-foreground">
-              {topic || "Tema por definir"}
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-xl border border-border/70 bg-white/80 p-3">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Curso
-              </p>
-              <p className="mt-1 text-sm font-semibold">{targetAudience}</p>
+      <div className="space-y-5 xl:sticky xl:top-6 xl:self-start">
+        <Card className="paper-panel overflow-hidden border-[rgba(33,62,74,0.14)] bg-card/95">
+          <CardHeader className="gap-2 border-b border-border/60 pb-4">
+            <CardTitle className="font-display text-2xl">Resumen</CardTitle>
+            <CardDescription className="text-sm text-[var(--ink-soft)]">
+              Vista rapida de lo que vas a generar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 pt-4">
+            <div className="relative overflow-hidden rounded-[1.4rem] border border-[rgba(33,62,74,0.12)] bg-[linear-gradient(135deg,rgba(34,74,108,0.95),rgba(102,132,148,0.9),rgba(177,215,122,0.8))] p-4 text-white">
+              <Image
+                src="/assets/covers/cover-freepik-education.jpg"
+                alt="Preview visual de portada"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1280px) 100vw, 360px"
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.25),transparent_44%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(140deg,rgba(16,30,50,0.58),rgba(16,30,50,0.16)_56%,rgba(231,184,94,0.22))]" />
+              <div className="relative">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/80">
+                  Contexto visual
+                </p>
+                <p className="mt-2 font-display text-2xl leading-tight">
+                  {topic || "Nueva guia"}
+                </p>
+                <p className="mt-1 text-sm text-white/80">
+                  {targetAudience} / {language === "en" ? "English" : "Espanol"}
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl border border-border/70 bg-white/80 p-3">
+
+            <div className="rounded-xl border border-border/70 bg-white/80 p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Actividades
+                Tema
               </p>
-              <p className="mt-1 text-sm font-semibold">{selectedActivities.length}</p>
-            </div>
-            <div className="rounded-xl border border-border/70 bg-white/80 p-3">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Puntaje estimado
+              <p className="mt-2 text-lg font-semibold text-foreground">
+                {topic || "Tema por definir"}
               </p>
-              <p className="mt-1 text-sm font-semibold">{estimatedScore}</p>
             </div>
-          </div>
-          <ul className="grid gap-2">
-            {selectedActivities.map((activity) => (
-              <li
-                key={activity.id}
-                className="flex items-center justify-between rounded-xl border border-border/70 bg-white/80 px-3 py-2 text-sm"
-              >
-                <span>{activityLookup[activity.id]?.label ?? activity.id}</span>
-                <span className="text-[var(--ink-soft)]">x {activity.count}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="rounded-xl border border-border/70 bg-white/80 p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Curso
+                </p>
+                <p className="mt-1 text-sm font-semibold">{targetAudience}</p>
+              </div>
+              <div className="rounded-xl border border-border/70 bg-white/80 p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Actividades
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {selectedActivities.length}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/70 bg-white/80 p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Puntaje estimado
+                </p>
+                <p className="mt-1 text-sm font-semibold">{estimatedScore}</p>
+              </div>
+            </div>
+            <ul className="grid gap-2">
+              {selectedActivities.map((activity) => (
+                <li
+                  key={activity.id}
+                  className="flex items-center justify-between rounded-xl border border-border/70 bg-white/80 px-3 py-2 text-sm"
+                >
+                  <span>{activityLookup[activity.id]?.label ?? activity.id}</span>
+                  <span className="text-[var(--ink-soft)]">x {activity.count}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <article className="flex items-start gap-3 rounded-[1.3rem] border border-[rgba(34,74,108,0.18)] bg-[rgba(227,239,249,0.72)] p-4 text-sm leading-6 text-[var(--ink-soft)]">
+          <Lightbulb className="mt-0.5 size-4 shrink-0 text-[var(--primary)]" />
+          <span>
+            Para temas complejos, combina <strong>Comprension</strong> y{" "}
+            <strong>Verificacion</strong> para mejorar retencion y evaluacion.
+          </span>
+        </article>
+      </div>
     </div>
   );
 }

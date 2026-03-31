@@ -49,6 +49,17 @@ export class PrismaWorkGuideRepository implements IWorkGuideRepository {
     return this.mapToEntity(result);
   }
 
+  async findCoverByIdForUser(id: string, userId: string): Promise<string | null> {
+    const result = await this.prisma.workGuide.findFirst({
+      where: { id, userId },
+      select: {
+        coverImageDataUrl: true,
+      },
+    });
+
+    return result?.coverImageDataUrl ?? null;
+  }
+
   async findAllForUser(userId: string): Promise<WorkGuideEntity[]> {
     const results = await this.prisma.workGuide.findMany({
       where: { userId },
@@ -65,12 +76,13 @@ export class PrismaWorkGuideRepository implements IWorkGuideRepository {
         reviewed: true,
         reviewedBy: true,
         reviewedAt: true,
+        hasCover: true,
         createdAt: true,
         updatedAt: true,
       },
     });
     return results.map((result) =>
-      this.mapToEntity({ ...result, content: null }),
+      this.mapToEntity({ ...result, content: null, coverImageDataUrl: null }),
     );
   }
 
@@ -80,7 +92,11 @@ export class PrismaWorkGuideRepository implements IWorkGuideRepository {
     content?: unknown,
     globalScore?: number,
     errorMessage?: string,
+    coverImageDataUrl?: string | null,
   ): Promise<WorkGuideEntity> {
+    const shouldUpdateCover =
+      typeof coverImageDataUrl === 'string' || coverImageDataUrl === null;
+
     const result = await this.prisma.workGuide.update({
       where: { id },
       data: {
@@ -88,6 +104,12 @@ export class PrismaWorkGuideRepository implements IWorkGuideRepository {
         content: content ?? undefined,
         globalScore: globalScore ?? undefined,
         errorMessage: errorMessage ?? undefined,
+        ...(shouldUpdateCover
+          ? {
+              coverImageDataUrl,
+              hasCover: Boolean(coverImageDataUrl),
+            }
+          : {}),
       },
     });
 
@@ -124,6 +146,8 @@ export class PrismaWorkGuideRepository implements IWorkGuideRepository {
       reviewed: data.reviewed ?? false,
       reviewedBy: data.reviewedBy ?? null,
       reviewedAt: data.reviewedAt ?? null,
+      hasCover: data.hasCover ?? false,
+      coverImageDataUrl: data.coverImageDataUrl ?? null,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };

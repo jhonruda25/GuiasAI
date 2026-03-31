@@ -24,6 +24,8 @@ function createMockGuide(
     reviewed: false,
     reviewedBy: null,
     reviewedAt: null,
+    hasCover: false,
+    coverImageDataUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -63,7 +65,7 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
   let mockAiService: jest.Mocked<IAiGeneratorService>;
   let mockEventPublisher: jest.Mocked<IEventPublisher>;
   let mockImageGeneratorService: jest.Mocked<
-    Pick<ImageGeneratorService, 'generateImages'>
+    Pick<ImageGeneratorService, 'generateImages' | 'generateImage'>
   >;
 
   beforeEach(() => {
@@ -74,6 +76,7 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
       create: jest.fn(),
       findById: jest.fn(),
       findByIdForUser: jest.fn(),
+      findCoverByIdForUser: jest.fn(),
       findAllForUser: jest.fn(),
       updateStatus: jest.fn(),
       markAsReviewed: jest.fn(),
@@ -89,6 +92,7 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
 
     mockImageGeneratorService = {
       generateImages: jest.fn(),
+      generateImage: jest.fn(),
     };
 
     useCase = new ProcessWorkGuideGenerationUseCase(
@@ -105,8 +109,14 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
 
   it('should generate work guide, save to DB and emit event', async () => {
     mockAiService.generateWorkGuide.mockResolvedValue(mockGeneratedContent);
+    mockImageGeneratorService.generateImage.mockResolvedValue('cover-image');
     mockRepository.updateStatus.mockResolvedValue(
-      createMockGuide({ content: mockGeneratedContent, globalScore: 50 }),
+      createMockGuide({
+        content: mockGeneratedContent,
+        globalScore: 50,
+        hasCover: true,
+        coverImageDataUrl: 'cover-image',
+      }),
     );
 
     await useCase.execute('test-id', 'El Sistema Solar', 'Primaria', 'es');
@@ -122,6 +132,8 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
       'COMPLETED',
       mockGeneratedContent,
       50,
+      undefined,
+      'cover-image',
     );
     expect(mockEventPublisher.publishGuideUpdated).toHaveBeenCalledWith(
       'test-id',
@@ -131,6 +143,7 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
       },
     );
     expect(mockImageGeneratorService.generateImages).not.toHaveBeenCalled();
+    expect(mockImageGeneratorService.generateImage).toHaveBeenCalledTimes(1);
   });
 
   it('should handle AI generation failure', async () => {
@@ -175,6 +188,7 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
       'img-1',
       'img-2',
     ]);
+    mockImageGeneratorService.generateImage.mockResolvedValue('cover-image');
     mockRepository.updateStatus.mockResolvedValue(
       createMockGuide({
         content: {
@@ -209,6 +223,29 @@ describe('ProcessWorkGuideGenerationUseCase', () => {
         ],
       },
       20,
+      undefined,
+      'cover-image',
+    );
+  });
+
+  it('should not fail guide completion if cover generation fails', async () => {
+    mockAiService.generateWorkGuide.mockResolvedValue(mockGeneratedContent);
+    mockImageGeneratorService.generateImage.mockRejectedValue(
+      new Error('image model unavailable'),
+    );
+    mockRepository.updateStatus.mockResolvedValue(
+      createMockGuide({ content: mockGeneratedContent, globalScore: 50 }),
+    );
+
+    await useCase.execute('test-id', 'El Sistema Solar', 'Primaria', 'es');
+
+    expect(mockRepository.updateStatus).toHaveBeenCalledWith(
+      'test-id',
+      'COMPLETED',
+      mockGeneratedContent,
+      50,
+      undefined,
+      null,
     );
   });
 });

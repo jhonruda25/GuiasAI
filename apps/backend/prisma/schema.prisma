@@ -21,6 +21,8 @@ model WorkGuide {
   reviewed       Boolean         @default(false)
   reviewedBy     String?         @map("reviewed_by")
   reviewedAt     DateTime?       @map("reviewed_at")
+  hasCover       Boolean         @default(false) @map("has_cover")
+  coverImageDataUrl String?      @map("cover_image_data_url")
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
 

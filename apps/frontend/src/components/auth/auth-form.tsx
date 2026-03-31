@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,11 +41,31 @@ export function AuthForm({
   children,
   secondaryAction,
 }: AuthFormProps) {
+  const visualPills = [
+    {
+      icon: "/assets/icons/icon-freepik-1-4326138.png",
+      title: "Portadas",
+      subtitle: "Con atmosfera",
+    },
+    {
+      icon: "/assets/icons/icon-freepik-10-3756049.png",
+      title: "Ritmo",
+      subtitle: "Lectura guiada",
+    },
+    {
+      icon: "/assets/icons/icon-freepik-11-15717628.png",
+      title: "Entrega",
+      subtitle: "Lista para aula",
+    },
+  ];
+
   return (
     <div className="grid min-h-[100dvh] place-items-center px-4 py-6 sm:px-6 lg:px-8">
       <div className="hero-grid w-full max-w-6xl">
-        <section className="studio-shell rounded-[2rem] px-6 py-8 sm:px-8 lg:px-10">
-          <div className="max-w-2xl space-y-6">
+        <section className="studio-shell relative overflow-hidden rounded-[2rem] px-6 py-8 sm:px-8 lg:px-10">
+          <div className="pointer-events-none absolute -left-20 -top-24 size-56 rounded-full bg-[rgba(35,79,117,0.14)] blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -right-24 size-64 rounded-full bg-[rgba(231,184,94,0.16)] blur-3xl" />
+          <div className="max-w-2xl space-y-7">
             <span className="section-kicker">Estudio para docentes</span>
             <p className="text-sm font-medium uppercase tracking-[0.16em] text-[var(--ink-soft)]">
               GuiasAI
@@ -56,17 +77,60 @@ export function AuthForm({
               Menos interfaz decorativa y mas foco en resultados docentes:
               crear, revisar y exportar en un flujo sencillo.
             </p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-border/60 bg-white/70 px-3 py-2 text-xs font-semibold text-[var(--ink-soft)]">
-                Biblioteca
+
+            <article className="relative overflow-hidden rounded-[1.45rem] border border-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.62)] p-3 shadow-[0_22px_34px_rgba(22,39,60,0.08)] backdrop-blur">
+              <div className="relative h-40 overflow-hidden rounded-[1.1rem]">
+                <Image
+                  src="/assets/covers/cover-freepik-education.jpg"
+                  alt="Editorial education cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 560px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(130deg,rgba(12,29,52,0.62),rgba(12,29,52,0.1)_58%,rgba(231,184,94,0.28))]" />
+                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[0.64rem] font-semibold uppercase tracking-[0.2em] text-white/82">
+                      Layout editorial
+                    </p>
+                    <p className="mt-1 font-display text-xl leading-none text-white">
+                      Diseno con imagenes reales
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-white/35 bg-white/16 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur">
+                    Visual
+                  </span>
+                </div>
               </div>
-              <div className="rounded-xl border border-border/60 bg-white/70 px-3 py-2 text-xs font-semibold text-[var(--ink-soft)]">
-                Recetas
+
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {visualPills.map((pill) => (
+                  <div
+                    key={pill.title}
+                    className="flex items-center gap-2 rounded-xl border border-border/60 bg-white/86 px-2.5 py-2"
+                  >
+                    <div className="relative size-7 overflow-hidden rounded-md border border-border/60 bg-white">
+                      <Image
+                        src={pill.icon}
+                        alt={pill.title}
+                        fill
+                        className="object-cover"
+                        sizes="28px"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[var(--surface-ink)]">
+                        {pill.title}
+                      </p>
+                      <p className="truncate text-[0.68rem] text-[var(--ink-soft)]">
+                        {pill.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="rounded-xl border border-border/60 bg-white/70 px-3 py-2 text-xs font-semibold text-[var(--ink-soft)]">
-                Exportacion
-              </div>
-            </div>
+            </article>
           </div>
         </section>
 

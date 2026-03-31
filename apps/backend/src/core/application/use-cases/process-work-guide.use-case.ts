@@ -78,12 +78,19 @@ export class ProcessWorkGuideGenerationUseCase {
         (sum, a) => sum + a.score,
         0,
       );
+      const coverImageDataUrl = await this.generateGuideCover(
+        topic,
+        targetAudience,
+        language,
+      );
 
       await this.workGuideRepository.updateStatus(
         guideId,
         'COMPLETED',
         parsedWithImages,
         globalScore,
+        undefined,
+        coverImageDataUrl,
       );
 
       this.eventPublisher.publishGuideUpdated(guideId, {
@@ -106,6 +113,32 @@ export class ProcessWorkGuideGenerationUseCase {
         status: 'FAILED',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
+    }
+  }
+
+  private async generateGuideCover(
+    topic: string,
+    targetAudience: string,
+    language: string,
+  ): Promise<string | null> {
+    const languageName = language === 'en' ? 'English' : 'Spanish';
+    const prompt = [
+      `Create a clean educational editorial cover illustration for "${topic}".`,
+      `Audience: ${targetAudience}.`,
+      `Text language context: ${languageName}.`,
+      'Style: modern magazine-like, warm academic atmosphere, soft lighting, high detail, no text, no logos, no watermark.',
+      'Focus on symbolic visual elements related to the topic, suitable for a school worksheet cover.',
+    ].join(' ');
+
+    try {
+      return await this.imageGeneratorService.generateImage(prompt);
+    } catch (coverError) {
+      this.logger.warn(
+        `Cover image generation failed for topic "${topic}", using visual fallback only: ${
+          coverError instanceof Error ? coverError.message : 'Unknown error'
+        }`,
+      );
+      return null;
     }
   }
 }

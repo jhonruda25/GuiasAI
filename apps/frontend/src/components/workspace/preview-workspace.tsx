@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, FileOutput, ScrollText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { WorkGuideRecord } from "@/services/work-guide.api";
+import { getWorkGuideCover, type WorkGuideRecord } from "@/services/work-guide.api";
 
 const WorkGuidePreview = dynamic(
   () =>
@@ -31,6 +32,22 @@ export function PreviewWorkspace({
   onBack,
   onResetGenerated,
 }: PreviewWorkspaceProps) {
+  const [coverImageDataUrl, setCoverImageDataUrl] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setCoverImageDataUrl(null);
+
+    if (!guide.hasCover) {
+      return;
+    }
+
+    void getWorkGuideCover(guide.id)
+      .then((value) => setCoverImageDataUrl(value))
+      .catch(() => setCoverImageDataUrl(null));
+  }, [guide.id, guide.hasCover]);
+
   if (!guide.content) {
     return null;
   }
@@ -79,6 +96,27 @@ export function PreviewWorkspace({
         </CardHeader>
 
         <CardContent className="pt-6">
+          <div className="mb-5 overflow-hidden rounded-[1.6rem] border border-[rgba(33,62,74,0.08)] bg-[rgba(245,250,252,0.8)]">
+            <div className="relative h-44">
+              {coverImageDataUrl ? (
+                <img
+                  src={coverImageDataUrl}
+                  alt={`Portada de ${guide.topic}`}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(34,74,108,0.92),rgba(98,133,148,0.86),rgba(241,191,95,0.72))]" />
+              )}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.22),transparent_45%)]" />
+              <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(14,27,42,0.64))] px-5 py-4 text-white">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white/80">
+                  Portada de la guia
+                </p>
+                <p className="mt-1 font-display text-2xl">{guide.topic}</p>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-[2rem] border border-[rgba(33,62,74,0.08)] bg-[linear-gradient(180deg,rgba(245,241,233,0.92),rgba(255,255,255,0.88))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:p-5">
             <div className="rounded-[1.65rem] border border-[rgba(33,62,74,0.08)] bg-white px-3 py-4 shadow-[0_22px_44px_rgba(27,42,61,0.1)] sm:px-5 sm:py-5">
               <WorkGuidePreview

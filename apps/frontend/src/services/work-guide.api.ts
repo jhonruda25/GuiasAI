@@ -10,6 +10,7 @@ export interface WorkGuideListItem {
   targetAudience: string;
   language: string;
   status: WorkGuideStatus;
+  hasCover: boolean;
   globalScore: number | null;
   errorMessage: string | null;
   reviewed: boolean;
@@ -28,6 +29,10 @@ export interface CreateWorkGuideResponse {
   status: Extract<WorkGuideStatus, 'GENERATING'>;
 }
 
+interface WorkGuideCoverResponse {
+  coverImageDataUrl: string;
+}
+
 export async function getAllWorkGuides(): Promise<WorkGuideListItem[]> {
   const { data } = await apiClient.get<WorkGuideListItem[]>('/api/v1/work-guides');
   return data;
@@ -36,6 +41,13 @@ export async function getAllWorkGuides(): Promise<WorkGuideListItem[]> {
 export async function getWorkGuideById(id: string): Promise<WorkGuideRecord> {
   const { data } = await apiClient.get<WorkGuideRecord>(`/api/v1/work-guides/${id}`);
   return data;
+}
+
+export async function getWorkGuideCover(id: string): Promise<string> {
+  const { data } = await apiClient.get<WorkGuideCoverResponse>(
+    `/api/v1/work-guides/${id}/cover`,
+  );
+  return data.coverImageDataUrl;
 }
 
 export async function createWorkGuide(

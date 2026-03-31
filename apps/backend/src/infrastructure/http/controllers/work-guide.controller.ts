@@ -57,7 +57,8 @@ export class WorkGuideController {
 
   @Get()
   async findAll(@CurrentUser() user: SessionUser) {
-    return this.workGuideRepository.findAllForUser(user.id);
+    const guides = await this.workGuideRepository.findAllForUser(user.id);
+    return guides.map((guide) => this.toApiGuide(guide));
   }
 
   @Post()
@@ -97,12 +98,30 @@ export class WorkGuideController {
     return this.workGuideRepository.markAsReviewed(id, dto.reviewerName);
   }
 
+  @Get(':id/cover')
+  async findCover(
+    @CurrentUser() user: SessionUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    const coverImageDataUrl = await this.workGuideRepository.findCoverByIdForUser(
+      id,
+      user.id,
+    );
+
+    if (!coverImageDataUrl) {
+      throw new NotFoundException('Guide cover not found');
+    }
+
+    return { coverImageDataUrl };
+  }
+
   @Get(':id')
   async findOne(
     @CurrentUser() user: SessionUser,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    return this.assertGuideOwnedByUser(id, user.id);
+    const guide = await this.assertGuideOwnedByUser(id, user.id);
+    return this.toApiGuide(guide);
   }
 
   @Sse(':id/events')
@@ -125,5 +144,10 @@ export class WorkGuideController {
     }
 
     return guide;
+  }
+
+  private toApiGuide<T extends { coverImageDataUrl?: string | null }>(guide: T) {
+    const { coverImageDataUrl: _coverImageDataUrl, ...publicGuide } = guide;
+    return publicGuide;
   }
 }

@@ -1,87 +1,141 @@
 # GuiasAI
 
-GuiasAI es un monorepo con:
+<p align="center">
+  Plataforma para docentes que genera guias pedagogicas con IA, listas para revisar, reutilizar y exportar.
+</p>
 
-- `apps/frontend`: Next.js 16 para la interfaz docente
-- `apps/backend`: NestJS + BullMQ para API, auth y procesamiento
-- `packages/schemas`: contrato compartido de la guia pedagogica
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Frontend-Next.js_16-111827?style=for-the-badge&logo=next.js">
+  <img alt="NestJS" src="https://img.shields.io/badge/Backend-NestJS_11-EA2845?style=for-the-badge&logo=nestjs">
+  <img alt="Prisma" src="https://img.shields.io/badge/ORM-Prisma_5-2D3748?style=for-the-badge&logo=prisma">
+  <img alt="Redis" src="https://img.shields.io/badge/Queue-Redis%20%2B%20BullMQ-DC2626?style=for-the-badge&logo=redis">
+  <img alt="Gemini" src="https://img.shields.io/badge/IA-Gemini-2563EB?style=for-the-badge">
+</p>
 
-## Arquitectura objetivo
+---
 
-Produccion en Dokploy con un stack completo basado en Docker Compose:
+## Demo en produccion
+
+- URL demo: [https://guiasai.duckdns.org/](https://guiasai.duckdns.org/)
+- Infra: desplegado en CubePath (Dokploy + Docker Compose)
+
+> Si cambias dominio/puerto en CubePath, actualiza este enlace antes de registrar la issue.
+
+## Capturas
+
+### Login
+
+![Login GuiasAI](docs/screenshots/login.png)
+
+### Vista principal
+
+![Workspace GuiasAI](docs/screenshots/workspace.png)
+
+---
+
+## Que hace
+
+GuiasAI permite que un docente configure un tema, grado, idioma y actividades, y reciba una guia completa generada por IA.  
+El flujo incluye:
+
+- formulario de generacion
+- procesamiento asincrono con cola (worker)
+- vista de progreso
+- biblioteca de guias por usuario
+- preview para revision y exportacion
+- portadas visuales por guia con fallback si falla la imagen
+
+## Que problema resuelve
+
+Crear material academico consistente toma mucho tiempo y suele repetirse manualmente.  
+GuiasAI reduce ese costo operativo, acelera la preparacion de clase y mantiene un flujo de trabajo claro: generar -> revisar -> reutilizar.
+
+---
+
+## Arquitectura actual
+
+```mermaid
+flowchart LR
+  U[Docente en navegador] --> F[Frontend Next.js]
+  F -->|/api same-origin proxy| B[Backend NestJS]
+  B --> P[(PostgreSQL)]
+  B --> R[(Redis)]
+  B --> Q[BullMQ Queue]
+  Q --> W[Worker]
+  W --> G[Gemini API]
+  W --> P
+  B --> F
+```
+
+### Componentes obligatorios en produccion
 
 - `frontend`
 - `backend`
 - `worker`
-- `postgres`
 - `redis`
+- `postgres` (interno o externo via `DATABASE_URL`)
 
-Dokploy maneja dominio y HTTPS. La recomendacion es usar:
+Si `worker` no esta corriendo, las guias quedan en `GENERATING`.
 
-- `app.tudominio.com` para frontend
-- `api.tudominio.com` para backend
+---
 
-Con eso la sesion puede usar:
+## Stack
 
-- `FRONTEND_URL=https://app.tudominio.com`
-- `API_BASE_URL=https://api.tudominio.com`
-- `NEXT_PUBLIC_API_URL=` para que el navegador use el proxy same-origin de Next
-- `SESSION_COOKIE_DOMAIN=` mientras frontend y backend se comuniquen por el proxy
+- Frontend: Next.js 16, React 19, Tailwind CSS 4
+- Backend: NestJS 11, Prisma 5
+- Cola: BullMQ + Redis
+- DB: PostgreSQL
+- IA: Gemini (texto + imagen)
+- Monorepo: pnpm + Turbo
 
-## Variables importantes
+---
 
-### Backend
+## Estructura del repo
 
-- `FRONTEND_URL`
-- `DATABASE_URL`
-- `REDIS_HOST`
-- `REDIS_PORT`
-- `SESSION_COOKIE_DOMAIN`
-- `GOOGLE_GENERATIVE_AI_API_KEY`
-- `SENTRY_DSN` opcional
-- `SEED_DEMO_USER=false` en produccion
+```txt
+apps/
+  frontend/   # UI docente
+  backend/    # API, auth, colas y worker
+packages/
+  schemas/    # contrato compartido de guia
+deploy/
+scripts/
+```
 
-### Frontend
-
-- `API_BASE_URL`
-- `NEXT_PUBLIC_API_URL` opcional
-- `NEXT_PUBLIC_SENTRY_DSN`
-- `SENTRY_DSN` opcional
+---
 
 ## Desarrollo local
 
-### Opcion 1: desarrollo por procesos
-
-1. Instala dependencias:
+### 1) Instalar dependencias
 
 ```powershell
 pnpm.cmd install
 ```
 
-2. Crea variables de entorno:
+### 2) Configurar variables
 
-- copia `apps/backend/.env.example` a `apps/backend/.env`
-- copia `apps/frontend/.env.local.example` a `apps/frontend/.env.local`
+- copiar `apps/backend/.env.example` -> `apps/backend/.env`
+- copiar `apps/frontend/.env.local.example` -> `apps/frontend/.env.local`
 
-3. Levanta solo PostgreSQL y Redis:
+### 3) Levantar infraestructura local
 
 ```powershell
 pnpm.cmd db:up
 ```
 
-4. Aplica migraciones:
+### 4) Aplicar migraciones
 
 ```powershell
 pnpm.cmd db:migrate
 ```
 
-5. Si Prisma queda bloqueado por Windows:
+### 5) Si Prisma se bloquea en Windows
 
 ```powershell
 pnpm.cmd db:generate:safe
 ```
 
-6. Inicia los tres procesos en terminales separadas:
+### 6) Levantar app en 3 terminales
 
 ```powershell
 pnpm.cmd dev:api
@@ -95,51 +149,55 @@ pnpm.cmd dev:worker
 pnpm.cmd dev:frontend
 ```
 
-7. Ejecuta el smoke test local:
+### 7) Smoke test local
 
 ```powershell
 pnpm.cmd smoke:test:local
 ```
 
-### Opcion 2: stack local completo con Docker
+---
+
+## Docker local (stack completo)
 
 ```powershell
 pnpm.cmd compose:local:up
 ```
 
-Servicios expuestos:
+Servicios:
 
 - frontend: `http://localhost:3000`
 - backend: `http://localhost:3001`
 - postgres: `localhost:5432`
 - redis: `localhost:6379`
 
-Para correr el smoke test contra el stack Docker local:
-
-```powershell
-$env:API_BASE_URL='http://localhost:3001'; $env:FRONTEND_URL='http://localhost:3000'; pnpm.cmd smoke:test:local
-```
-
-Para bajar el stack:
+Apagar:
 
 ```powershell
 pnpm.cmd compose:local:down
 ```
 
-## Produccion con Dokploy
+---
 
-Usa `docker-compose.prod.yml` como stack principal. Incluye:
+## Produccion en CubePath / Dokploy
 
-- frontend publico
-- backend publico
-- worker interno
-- postgres interno con volumen persistente
-- redis interno con volumen persistente
+Usar `docker-compose.prod.yml` (o su variante en CubePath) con backend + worker + frontend + redis, y PostgreSQL interno o externo via `DATABASE_URL`.
+
+### Como se uso CubePath en este proyecto
+
+1. Se creo un proyecto en CubePath y se desplego con proveedor `Raw` usando `docker-compose`.
+2. Se publicaron imagenes Docker del proyecto y se referenciaron en compose:
+   - `chipi7u7/guiasai-frontend:${IMAGE_TAG}`
+   - `chipi7u7/guiasai-backend:${IMAGE_TAG}` (backend y worker)
+3. Se definieron variables en la pestaña `Environment` de CubePath:
+   - `API_BASE_URL`, `FRONTEND_URL`, `DATABASE_URL`, `REDIS_HOST`, `GOOGLE_GENERATIVE_AI_API_KEY`, etc.
+4. Se levanto `worker` como servicio dedicado para consumir BullMQ:
+   - `command: ["node", "dist/worker.js"]`
+5. Se uso red externa `dokploy-network` para integrar servicios y enrutar trafico.
+6. El despliegue se verifica con login + creacion de guia + procesamiento en worker.
 
 ### Variables minimas recomendadas
 
 ```env
-# copia este bloque como base a .env.production
 FRONTEND_URL=https://app.tudominio.com
 API_BASE_URL=https://api.tudominio.com
 NEXT_PUBLIC_API_URL=
@@ -149,45 +207,39 @@ GOOGLE_GENERATIVE_AI_API_KEY=replace-me
 SEED_DEMO_USER=false
 ```
 
-Tambien puedes partir del archivo versionado `.env.production.example`.
-
-### Migraciones
-
-El backend ya no ejecuta migraciones ni seed al arrancar. Ejecuta las migraciones como tarea separada:
+### Migraciones (obligatorio antes de trafico)
 
 ```powershell
 docker compose -f docker-compose.prod.yml --profile ops run --rm migrate
 ```
 
-Si necesitas crear el usuario demo en un ambiente no productivo:
+### Build minimo recomendado
 
 ```powershell
-$env:SEED_DEMO_USER='true'; pnpm.cmd --filter backend db:seed
+pnpm.cmd --filter backend build
+pnpm.cmd --filter frontend build
 ```
 
-No habilites `SEED_DEMO_USER` en produccion.
+---
 
-### Checklist de despliegue
+## Errores comunes y causa real
 
-- configura `FRONTEND_URL` y `API_BASE_URL` con tus dominios finales
-- deja `NEXT_PUBLIC_API_URL` vacio si quieres auth por cookie via proxy same-origin
-- deja `SESSION_COOKIE_DOMAIN` vacio mientras uses el proxy same-origin
-- ejecuta la tarea `migrate` antes de publicar trafico
-- publica `frontend` en `app.<dominio>` y `backend` en `api.<dominio>`
-- verifica `GET /healthz` y `GET /readyz` en backend
-- confirma que `worker` procese una guia de prueba hasta `COMPLETED`
-- verifica login, logout, registro y acceso al historial
+- `P2022 ... work_guides.has_cover does not exist`:
+  - codigo nuevo desplegado sin migracion aplicada.
+- `Failed to proxy http://localhost:3001/...` en frontend:
+  - `API_BASE_URL` mal configurada o imagen vieja en deploy.
+- login falla entre subdominios `duckdns.org`:
+  - no usar `SESSION_COOKIE_DOMAIN=.duckdns.org` (PSL).
 
-### Nota sobre DuckDNS
-
-`duckdns.org` aparece en la Public Suffix List, asi que el navegador no acepta cookies compartidas para `.duckdns.org`. Si despliegas en subdominios como `guiasai.duckdns.org` y `apiguiasai.duckdns.org`, no dependas de `SESSION_COOKIE_DOMAIN=.duckdns.org`; usa el proxy same-origin o un dominio propio.
+---
 
 ## Seguridad
 
-- la aplicacion mantiene registro publico en `/register`
-- no existe bypass de login en frontend
-- la cuenta demo solo puede sembrarse con `SEED_DEMO_USER=true`
-- ignora siempre archivos `.env*` fuera de los ejemplos versionados
+- no versionar `.env*` reales
+- `SEED_DEMO_USER=true` solo en ambientes no productivos
+- no exponer API keys en README, commits o issues
+
+---
 
 ## Comandos utiles
 

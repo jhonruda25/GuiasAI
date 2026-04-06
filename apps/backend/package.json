@@ -46,7 +46,7 @@
     "@nestjs/throttler": "6.4.0",
     "@prisma/client": "5.22.0",
     "@repo/schemas": "file:../../packages/schemas",
-    "@sentry/node": "10.46.0",
+    "@sentry/node": "10.47.0",
     "ai": "6.0.111",
     "bcryptjs": "3.0.2",
     "bullmq": "5.70.4",

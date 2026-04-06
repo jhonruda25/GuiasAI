@@ -58,7 +58,7 @@
     "jsonrepair": "^3.13.1",
     "prisma": "5.22.0",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.1",
+    "rxjs": "7.8.2",
     "zod": "^4.1.8"
   },
   "devDependencies": {

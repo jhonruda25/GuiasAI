@@ -48,7 +48,7 @@
     "@repo/schemas": "file:../../packages/schemas",
     "@sentry/node": "10.46.0",
     "ai": "6.0.111",
-    "bcryptjs": "3.0.2",
+    "bcryptjs": "3.0.3",
     "bullmq": "5.70.4",
     "cookie-parser": "1.4.7",
     "dotenv": "17.3.1",

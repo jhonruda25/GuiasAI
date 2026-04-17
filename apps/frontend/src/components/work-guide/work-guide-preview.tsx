@@ -43,6 +43,8 @@ interface ExportInfo {
   includeSignature: boolean;
   includePageNumbers: boolean;
   compactMode: boolean;
+  includeInstructions: boolean;
+  includeCompetencies: boolean;
 }
 
 const EXPORT_PREFS_KEY = 'guiasai_export_prefs';
@@ -78,6 +80,8 @@ function getDefaultExportInfo(isEn: boolean): ExportInfo {
     includeSignature: true,
     includePageNumbers: true,
     compactMode: false,
+    includeInstructions: true,
+    includeCompetencies: true,
   };
 }
 
@@ -166,6 +170,8 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
     includeSignature: true,
     includePageNumbers: true,
     compactMode: false,
+    includeInstructions: true,
+    includeCompetencies: true,
   });
 
   useEffect(() => {
@@ -198,6 +204,8 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
       includeSignature: info.includeSignature,
       includePageNumbers: info.includePageNumbers,
       compactMode: info.compactMode,
+      includeInstructions: info.includeInstructions,
+      includeCompetencies: info.includeCompetencies,
     }));
   };
 
@@ -347,21 +355,44 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
             </div>
 
             <div className="space-y-2 mt-4">
-              <label className="text-xs font-medium text-gray-600">
-                {isEn ? 'Instructions Text' : 'Texto de Instrucciones'}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">
+                  {isEn ? 'Instructions Text' : 'Texto de Instrucciones'}
+                </label>
+                <label className="flex items-center gap-1 text-[10px] cursor-pointer text-blue-600">
+                  <input
+                    type="checkbox"
+                    checked={info.includeInstructions}
+                    onChange={(e) => setInfo((current) => ({ ...current, includeInstructions: e.target.checked }))}
+                  />
+                  {isEn ? 'Include in PDF' : 'Incluir en PDF'}
+                </label>
+              </div>
               <textarea
                 rows={3}
-                className="w-full border rounded px-2 py-1 text-sm bg-white"
+                disabled={!info.includeInstructions}
+                className="w-full border rounded px-2 py-1 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400"
                 value={info.instructionsText}
                 onChange={e => setInfo((current) => ({ ...current, instructionsText: e.target.value }))}
               />
-              <label className="text-xs font-medium text-gray-600">
-                {isEn ? 'Competence Text' : 'Texto de Competencias'}
-              </label>
+              
+              <div className="flex items-center justify-between mt-2">
+                <label className="text-xs font-medium text-gray-600">
+                  {isEn ? 'Competence Text' : 'Texto de Competencias'}
+                </label>
+                <label className="flex items-center gap-1 text-[10px] cursor-pointer text-blue-600">
+                  <input
+                    type="checkbox"
+                    checked={info.includeCompetencies}
+                    onChange={(e) => setInfo((current) => ({ ...current, includeCompetencies: e.target.checked }))}
+                  />
+                  {isEn ? 'Include in PDF' : 'Incluir en PDF'}
+                </label>
+              </div>
               <textarea
                 rows={3}
-                className="w-full border rounded px-2 py-1 text-sm bg-white"
+                disabled={!info.includeCompetencies}
+                className="w-full border rounded px-2 py-1 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400"
                 value={info.competenceText}
                 onChange={e => setInfo((current) => ({ ...current, competenceText: e.target.value }))}
               />
@@ -535,29 +566,34 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
         {/* Topic removed here, as it may interfere with the layout. The document already has "WORK GUIDE" */}
 
         {/* Instructions & Competence Block */}
-        <div className="border border-t-0 border-black flex text-xs mb-4">
-          <div className="w-1/2 border-r border-black flex flex-col">
-            <div className="bg-gray-300 font-bold p-1 text-center border-b border-black uppercase">
-              {isEn ? 'INSTRUCTIONS' : 'INSTRUCCIONES'}
-            </div>
-            <div className="p-2 text-justify grow">
-              {info.instructionsText}
-            </div>
+        {(info.includeInstructions || info.includeCompetencies) && (
+          <div className="border border-t-0 border-black flex text-xs mb-4">
+            {info.includeInstructions && (
+              <div className={`${info.includeCompetencies ? 'w-1/2 border-r' : 'w-full'} border-black flex flex-col`}>
+                <div className="bg-gray-300 font-bold p-1 text-center border-b border-black uppercase">
+                  {isEn ? 'INSTRUCTIONS' : 'INSTRUCCIONES'}
+                </div>
+                <div className="p-2 text-justify grow">
+                  {info.instructionsText}
+                </div>
+              </div>
+            )}
+            {info.includeCompetencies && (
+              <div className={`${info.includeInstructions ? 'w-1/2' : 'w-full'} flex flex-col`}>
+                <div className="bg-gray-300 font-bold p-1 text-center border-b border-black uppercase">
+                  {isEn ? 'COMPETENCE' : 'COMPETENCIA'}
+                </div>
+                <div className="p-2 text-justify grow">
+                  {info.competenceText}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="w-1/2 flex flex-col">
-            <div className="bg-gray-300 font-bold p-1 text-center border-b border-black uppercase">
-              {isEn ? 'COMPETENCE' : 'COMPETENCIA'}
-            </div>
-            <div className="p-2 text-justify grow">
-              {info.competenceText}
-            </div>
-          </div>
-        </div>
+        )}
 
-        {/* Activities */}
         <div className={info.twoColumns ? "grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-4 px-2" : "space-y-5 px-2"}>
           {workGuide.activities.map((activity, index) => (
-            <div key={index} className={`border border-gray-300 rounded p-3 ${info.twoColumns ? 'break-inside-avoid' : ''} ${info.compactMode ? 'print:py-1 print:px-2' : ''}`}>
+            <div key={index} className={`border border-gray-300 rounded p-3 break-inside-avoid ${info.compactMode ? 'print:py-1 print:px-2' : ''}`}>
               <div className={`flex justify-between items-start ${info.compactMode ? 'mb-1' : 'mb-2'}`}>
                 <div>
                   <span className={`font-bold ${info.compactMode ? 'text-xs' : 'text-sm'}`}>

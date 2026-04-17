@@ -3,11 +3,13 @@ import type { Activity } from '@repo/schemas';
 
 interface Props {
   activity: Activity;
+  language?: string;
 }
 
-export function TableCompletionActivity({ activity }: Props) {
+export function TableCompletionActivity({ activity, language }: Props) {
   if (activity.type !== 'TABLE_COMPLETION') return null;
   
+  const isEn = language === 'en';
   const typedActivity = activity as Extract<Activity, { type: 'TABLE_COMPLETION' }>;
   const table = typedActivity.table || { headers: [], rows: [] };
   const instructions = typedActivity.instructions || '';
@@ -39,7 +41,9 @@ export function TableCompletionActivity({ activity }: Props) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-gray-500">Completa la tabla con la información correcta.</p>
+      <p className="text-xs text-gray-500">
+        {isEn ? 'Complete the table with the correct information.' : 'Completa la tabla con la información correcta.'}
+      </p>
     </div>
   );
 }

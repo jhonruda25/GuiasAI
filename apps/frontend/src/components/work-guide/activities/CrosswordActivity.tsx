@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react';
 import type { Activity } from '@repo/schemas';
 
 interface Props {
-    activity: Extract<Activity, { type: 'CROSSWORD' }> & { language?: string };
+    activity: Extract<Activity, { type: 'CROSSWORD' }>;
     language?: string;
 }
 
@@ -194,8 +194,8 @@ function generateCrossword(items: { word: string, clue_or_definition: string }[]
     return { board, placedWords };
 }
 
-export function CrosswordActivity({ activity }: Props) {
-    const isEn = activity.language === 'en';
+export function CrosswordActivity({ activity, language }: Props) {
+    const isEn = language === 'en';
     const [grid, setGrid] = useState<GridCell[][] | null>(null);
     const [horizontalClues, setHorizontalClues] = useState<PlacedWord[]>([]);
     const [verticalClues, setVerticalClues] = useState<PlacedWord[]>([]);
@@ -272,7 +272,7 @@ export function CrosswordActivity({ activity }: Props) {
                 `}} />
 
                 <div
-                    className="grid gap-[1px] bg-black border-2 border-black p-[2px]"
+                    className="grid gap-px bg-black border-2 border-black p-[2px]"
                     style={{ gridTemplateColumns: `repeat(${grid[0].length}, 1.8rem)`, width: 'max-content' }}
                 >
                     {grid.map((row, y) =>
@@ -286,7 +286,7 @@ export function CrosswordActivity({ activity }: Props) {
                                 style={cell.isEmpty ? hiddenCellStyle : undefined}
                             >
                                 {cell.number && (
-                                    <span className="absolute top-[1px] left-[2px] text-[0.45rem] font-bold leading-none text-black select-none z-10">
+                                    <span className="absolute top-px left-[2px] text-[0.45rem] font-bold leading-none text-black select-none z-10">
                                         {cell.number}
                                     </span>
                                 )}
@@ -318,7 +318,7 @@ export function CrosswordActivity({ activity }: Props) {
                                 </span>
                             </li>
                         ))}
-                        {horizontalClues.length === 0 && <p className="text-xs text-gray-400 italic">No hay palabras horizontales.</p>}
+                        {horizontalClues.length === 0 && <p className="text-xs text-gray-400 italic">{isEn ? 'No horizontal words.' : 'No hay palabras horizontales.'}</p>}
                     </ol>
                 </div>
                 <div>
@@ -335,7 +335,7 @@ export function CrosswordActivity({ activity }: Props) {
                                 </span>
                             </li>
                         ))}
-                        {verticalClues.length === 0 && <p className="text-xs text-gray-400 italic">No hay palabras verticales.</p>}
+                        {verticalClues.length === 0 && <p className="text-xs text-gray-400 italic">{isEn ? 'No vertical words.' : 'No hay palabras verticales.'}</p>}
                     </ol>
                 </div>
             </div>

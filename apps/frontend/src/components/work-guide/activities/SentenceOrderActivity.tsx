@@ -4,11 +4,13 @@ import { shuffleWithSeed, stringToSeed } from '@/lib/stable-random';
 
 interface Props {
   activity: Activity;
+  language?: string;
 }
 
-export function SentenceOrderActivity({ activity }: Props) {
+export function SentenceOrderActivity({ activity, language }: Props) {
   if (activity.type !== 'SENTENCE_ORDER') return null;
   
+  const isEn = language === 'en';
   const typedActivity = activity as Extract<Activity, { type: 'SENTENCE_ORDER' }>;
   const sentences = typedActivity.sentences || [];
   const instructions = typedActivity.instructions || '';
@@ -30,7 +32,7 @@ export function SentenceOrderActivity({ activity }: Props) {
               ))}
             </div>
             <div className="mt-2 border-b border-dashed border-gray-300 pb-2">
-              <span className="text-xs text-gray-500">Ordena las palabras: </span>
+              <span className="text-xs text-gray-500">{isEn ? 'Order the words: ' : 'Ordena las palabras: '}</span>
               <span className="text-xs text-gray-400 italic">______ ______ ______</span>
             </div>
           </li>

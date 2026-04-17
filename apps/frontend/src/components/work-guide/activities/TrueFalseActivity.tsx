@@ -1,8 +1,13 @@
 import type { Activity } from '@repo/schemas';
 
-type TrueFalse = Extract<Activity, { type: 'TRUE_FALSE' }>;
+interface Props {
+  activity: Extract<Activity, { type: 'TRUE_FALSE' }>;
+  language?: string;
+}
 
-export function TrueFalseActivity({ activity, language }: { activity: TrueFalse, language?: string }) {
+export function TrueFalseActivity({ activity, language }: Props) {
+    const isEn = language === 'en';
+
     return (
         <div className="space-y-4 text-sm mt-3">
             <table className="w-full border-collapse">

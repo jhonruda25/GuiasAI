@@ -4,7 +4,8 @@ import type { Activity } from '@repo/schemas';
 import { createSeededRandom, stringToSeed } from '@/lib/stable-random';
 
 interface Props {
-    activity: Extract<Activity, { type: 'WORD_SEARCH' }> & { language?: string };
+    activity: Extract<Activity, { type: 'WORD_SEARCH' }>;
+    language?: string;
     theme?: { color: string; emoji: string; };
 }
 
@@ -56,8 +57,8 @@ function generateWordSearch(words: string[], size = 12): string[][] {
     return grid;
 }
 
-export function WordSearchGrid({ activity, theme }: Props) {
-    const isEn = activity.language === 'en';
+export function WordSearchGrid({ activity, language, theme }: Props) {
+    const isEn = language === 'en';
     const words = activity.items.map((item) => item.word);
     const grid = useMemo(() => generateWordSearch(words), [words]);
 

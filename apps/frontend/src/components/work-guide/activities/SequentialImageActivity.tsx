@@ -2,10 +2,10 @@
 import Image from 'next/image';
 import type { Activity } from '@repo/schemas';
 
-interface Props { activity: Extract<Activity, { type: 'SEQUENTIAL_IMAGE_ANALYSIS' }> & { language?: string } }
+interface Props { activity: Extract<Activity, { type: 'SEQUENTIAL_IMAGE_ANALYSIS' }>; language?: string }
 
-export function SequentialImageActivity({ activity }: Props) {
-    const isEn = activity.language === 'en';
+export function SequentialImageActivity({ activity, language }: Props) {
+    const isEn = language === 'en';
     const hasImages = activity.generated_images && activity.generated_images.length > 0;
 
     return (

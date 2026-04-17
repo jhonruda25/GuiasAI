@@ -45,6 +45,7 @@ interface ExportInfo {
   compactMode: boolean;
   includeInstructions: boolean;
   includeCompetencies: boolean;
+  includeActivityScores: boolean;
 }
 
 const EXPORT_PREFS_KEY = 'guiasai_export_prefs';
@@ -82,6 +83,7 @@ function getDefaultExportInfo(isEn: boolean): ExportInfo {
     compactMode: false,
     includeInstructions: true,
     includeCompetencies: true,
+    includeActivityScores: true,
   };
 }
 
@@ -123,20 +125,22 @@ const ACTIVITY_TYPE_LABELS: Record<string, Record<string, string>> = {
 };
 
 function ActivityRenderer({ activity, language, theme }: { activity: WorkGuide['activities'][number], language?: string, theme?: { color: string; emoji: string; } }) {
+  const props = { activity: activity as any, language, theme };
+  
   switch (activity.type) {
-    case 'FILL_BLANKS': return <FillBlanksActivity activity={activity} />;
-    case 'MATCH_CONCEPTS': return <MatchConceptsActivity activity={activity} />;
-    case 'WORD_SEARCH': return <WordSearchGrid activity={activity} theme={theme} />;
-    case 'CROSSWORD': return <CrosswordActivity activity={activity} language={language} />;
-    case 'SEQUENTIAL_IMAGE_ANALYSIS': return <SequentialImageActivity activity={activity} />;
-    case 'BONUS': return <BonusActivity activity={activity} />;
-    case 'MULTIPLE_CHOICE': return <MultipleChoiceActivity activity={activity} />;
-    case 'TRUE_FALSE': return <TrueFalseActivity activity={activity} language={language} />;
-    case 'WORD_SCRAMBLE': return <WordScrambleActivity activity={activity} />;
-    case 'DICTATION': return <DictationActivity activity={activity} />;
-    case 'SENTENCE_ORDER': return <SentenceOrderActivity activity={activity} />;
-    case 'ERROR_IDENTIFICATION': return <ErrorIdentificationActivity activity={activity} />;
-    case 'TABLE_COMPLETION': return <TableCompletionActivity activity={activity} />;
+    case 'FILL_BLANKS': return <FillBlanksActivity {...props} />;
+    case 'MATCH_CONCEPTS': return <MatchConceptsActivity {...props} />;
+    case 'WORD_SEARCH': return <WordSearchGrid {...props} />;
+    case 'CROSSWORD': return <CrosswordActivity {...props} />;
+    case 'SEQUENTIAL_IMAGE_ANALYSIS': return <SequentialImageActivity {...props} />;
+    case 'BONUS': return <BonusActivity {...props} />;
+    case 'MULTIPLE_CHOICE': return <MultipleChoiceActivity {...props} />;
+    case 'TRUE_FALSE': return <TrueFalseActivity {...props} />;
+    case 'WORD_SCRAMBLE': return <WordScrambleActivity {...props} />;
+    case 'DICTATION': return <DictationActivity {...props} />;
+    case 'SENTENCE_ORDER': return <SentenceOrderActivity {...props} />;
+    case 'ERROR_IDENTIFICATION': return <ErrorIdentificationActivity {...props} />;
+    case 'TABLE_COMPLETION': return <TableCompletionActivity {...props} />;
     default: return null;
   }
 }
@@ -172,6 +176,7 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
     compactMode: false,
     includeInstructions: true,
     includeCompetencies: true,
+    includeActivityScores: true,
   });
 
   useEffect(() => {
@@ -202,10 +207,10 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
       competenceText: info.competenceText,
       includeRubric: info.includeRubric,
       includeSignature: info.includeSignature,
-      includePageNumbers: info.includePageNumbers,
-      compactMode: info.compactMode,
+      includeCompactMode: info.compactMode,
       includeInstructions: info.includeInstructions,
       includeCompetencies: info.includeCompetencies,
+      includeActivityScores: info.includeActivityScores,
     }));
   };
 
@@ -231,6 +236,8 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
           @page :first {
             margin-top: 10mm;
           }
+          /* Fix for extra blank pages */
+          html, body { height: auto !important; margin: 0 !important; overflow: visible !important; }
         }
         @media screen {
           #print-root { display: none; }
@@ -447,6 +454,14 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
                 />
                 {isEn ? 'Compact mode (smaller spacing)' : 'Modo compacto (menor espaciado)'}
               </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={info.includeActivityScores}
+                  onChange={(e) => setInfo((current) => ({ ...current, includeActivityScores: e.target.checked }))}
+                />
+                {isEn ? 'Include Activity Scores (e.g. 20p)' : 'Incluir puntajes de actividades (ej. 20p)'}
+              </label>
             </div>
 
             <div className="flex gap-2 justify-end pt-2">
@@ -498,7 +513,7 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
                   width={128}
                   height={128}
                   unoptimized
-                  className="max-h-32 max-w-full object-contain"
+                  className="max-h-24 max-w-full object-contain"
                 />
               ) : (
                 <div className="text-4xl font-black text-gray-300">
@@ -598,7 +613,7 @@ export function WorkGuidePreview({ workGuide, onReset }: WorkGuidePreviewProps) 
                 <div>
                   <span className={`font-bold ${info.compactMode ? 'text-xs' : 'text-sm'}`}>
                     {index + 1}. {ACTIVITY_TYPE_LABELS[activity.type]?.[isEn ? 'en' : 'es'] || activity.type}
-                    {' '}({activity.score}p)
+                    {info.includeActivityScores && ` (${activity.score}p)`}
                   </span>
                   <p className={`text-gray-600 ${info.compactMode ? 'text-xs mt-0' : 'text-xs mt-0.5'} italic`}>{activity.instructions}</p>
                 </div>

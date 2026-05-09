@@ -11,6 +11,7 @@ import {
   AI_GENERATOR_SERVICE,
   EVENT_PUBLISHER,
   QUEUE_PRODUCER,
+  USER_REPOSITORY,
   WORK_GUIDE_REPOSITORY,
 } from './core/domain/ports';
 import { AuthController } from './infrastructure/auth/auth.controller';
@@ -20,6 +21,7 @@ import { SessionService } from './infrastructure/auth/session.service';
 import { ImageGeneratorService } from './infrastructure/ai/image-generator.service';
 import { VercelAiGeneratorService } from './infrastructure/ai/vercel-ai-generator.service';
 import { PrismaWorkGuideRepository } from './infrastructure/database/prisma/prisma-work-guide.repository';
+import { PrismaUserRepository } from './infrastructure/database/prisma/prisma-user.repository';
 import { PrismaService } from './infrastructure/database/prisma/prisma.service';
 import { RedisEventEmitterPublisher } from './infrastructure/events/redis-event-emitter.publisher';
 import { RedisGuideEventsBridge } from './infrastructure/events/redis-guide-events.bridge';
@@ -63,6 +65,10 @@ import { getRedisConnection } from './config/env';
     {
       provide: WORK_GUIDE_REPOSITORY,
       useClass: PrismaWorkGuideRepository,
+    },
+    {
+      provide: USER_REPOSITORY,
+      useClass: PrismaUserRepository,
     },
     {
       provide: QUEUE_PRODUCER,

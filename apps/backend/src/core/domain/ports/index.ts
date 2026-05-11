@@ -1,6 +1,9 @@
 import { WorkGuideEntity } from '../entities/work-guide.entity';
+import type { UserEntity } from '../entities/user.entity';
+export type { UserEntity } from '../entities/user.entity';
 
 export const WORK_GUIDE_REPOSITORY = 'WORK_GUIDE_REPOSITORY';
+export const USER_REPOSITORY = 'USER_REPOSITORY';
 export const QUEUE_PRODUCER = 'QUEUE_PRODUCER';
 export const EVENT_PUBLISHER = 'EVENT_PUBLISHER';
 export const AI_GENERATOR_SERVICE = 'AI_GENERATOR_SERVICE';
@@ -50,4 +53,14 @@ export interface IAiGeneratorService {
     language: string,
     activities?: string[],
   ): Promise<unknown>;
+}
+
+export interface IUserRepository {
+  findById(id: string): Promise<UserEntity | null>;
+  findByEmail(email: string): Promise<UserEntity | null>;
+  create(data: {
+    fullName: string;
+    email: string;
+    passwordHash: string;
+  }): Promise<UserEntity>;
 }

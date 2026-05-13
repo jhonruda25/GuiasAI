@@ -40,7 +40,7 @@
     "@nestjs/bullmq": "11.0.4",
     "@nestjs/common": "11.0.21",
     "@nestjs/core": "11.1.18",
-    "@nestjs/event-emitter": "3.0.1",
+    "@nestjs/event-emitter": "3.1.0",
     "@nestjs/platform-express": "11.0.21",
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/throttler": "6.4.0",
